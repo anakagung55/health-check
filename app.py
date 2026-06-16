@@ -1,7 +1,5 @@
 import streamlit as st
 import os
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 from dotenv import load_dotenv
 
