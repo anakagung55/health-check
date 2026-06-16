@@ -1,0 +1,45 @@
+﻿,Question Weights Within Each Section,,,,,,,
+← Back to contents,,,,,,,,
+,#,Short label,Question,Grow,Improve Profitability,Exit / Transition,All / Undecided,Rationale
+,Financial Performance,,,,,,,
+,Q1,Revenue trend,How would you describe your revenue trend over the past 3 years?,15%,10%,15%,15%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q2,Financial records,"How complete and reliable are your financial records, including balance sheet and tax position?",15%,10%,25%,18%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q3,Profitability,What is your underlying profitability relative to your expectations and industry peers?,25%,40%,20%,27%,Profitability carries the single heaviest weight for a profitability objective because it most directly captures the core economic quality of the business.
+,Q4,Pricing & costs,How well do you understand and manage your pricing strategy and cost structure?,30%,30%,15%,25%,Pricing and cost discipline is the fastest lever for improving underlying earnings.
+,Q5,Recurring revenue,Do you have recurring or contracted revenue?,15%,10%,25%,15%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,,Section total,,100%,100%,100%,100%,
+,Strategic Direction & Growth,,,,,,,
+,Q6,Strategic plan,Do you have a documented strategic plan with measurable goals?,20%,30%,10%,20%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q7,Growth opps,Have you identified and validated clear growth opportunities?,30%,20%,20%,22%,Validated growth opportunities matter most for a growth objective because they show the business knows where expansion will come from.
+,Q8,Innovation,"How actively are you developing new products, services or revenue streams?",25%,10%,15%,18%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q9,Change readiness,"How prepared is your business for a change in ownership, leadership or major capital event?",10%,25%,30%,22%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q10,Market value,Do you understand your business's current market value?,15%,15%,25%,18%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,,Section total,,100%,100%,100%,100%,
+,Customer & Market Position,,,,,,,
+,Q11,Retention rate,What is your customer retention rate?,15%,20%,15%,18%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q12,Concentration,"How concentrated is your revenue, and how direct are your customer relationships?",30%,30%,30%,28%,"Revenue concentration is heavily weighted because it affects resilience, bargaining power and valuation across all goals."
+,Q13,Differentiation,How differentiated is your offering from competitors?,30%,25%,20%,24%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q14,Industry outlook,What is the outlook for your industry over the next 5 years?,15%,10%,15%,14%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q15,Contracts,Do you have formal contracts or agreements with major customers?,10%,15%,20%,16%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,,Section total,,100%,100%,100%,100%,
+,Operations & Scalability,,,,,,,
+,Q16,Process docs,Are your core business processes documented and standardised?,15%,10%,20%,15%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q17,Scalability,How scalable is your business model?,35%,25%,20%,26%,Scalability is heavily weighted for growth because poor scalability means growth destroys value.
+,Q18,Technology,How up-to-date and efficient is your technology stack?,20%,30%,15%,21%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q19,IP,Do you have meaningful intellectual property (IP)?,20%,15%,25%,20%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q20,Supply chain,How reliable and diversified is your supply chain?,10%,20%,20%,18%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,,Section total,,100%,100%,100%,100%,
+,People & Leadership,,,,,,,
+,Q21,Owner dependency,How dependent is the business on the owner or other key staff?,30%,20%,40%,28%,Owner dependency is the single heaviest question for exit because it is the clearest test of transferability.
+,Q22,Mgmt team,Do you have a capable second-tier management team?,25%,15%,25%,22%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q23,Staff stability,How stable is your key staff and leadership team?,20%,20%,15%,18%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q24,HR & structure,"Do you have formal HR, org structure and performance management?",10%,20%,5%,12%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q25,Knowledge capture,Are key relationships and knowledge captured in systems — not just people's heads?,15%,25%,15%,20%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,,Section total,,100%,100%,100%,100%,
+,Legal & Risk Management,,,,,,,
+,Q26,Corp records,"Are your corporate records, contracts and legal documents in order?",20%,15%,15%,16%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q27,Disputes,"Are there any current or pending disputes, litigation or regulatory issues?",20%,20%,15%,18%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q28,Asset protection,"How well-protected are your key business assets (IP, data, premises)?",25%,25%,20%,24%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,Q29,Transferability,Do your leases and key contracts have transferable terms?,15%,15%,30%,22%,Transferability is heavily weighted for exit because non-transferable contracts can break a deal late in due diligence.
+,Q30,Insurance,Do you have adequate insurance coverage for your business risks?,20%,25%,20%,20%,Weight reflects how strongly this question influences the selected goal relative to the other four questions in the section.
+,,Section total,,100%,100%,100%,100%,

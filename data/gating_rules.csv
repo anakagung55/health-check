@@ -1,0 +1,11 @@
+﻿,Gating Rules,,,,,
+← Back to contents,,,,,,
+,Section,Question,Goal applied,Trigger ≤,Effect,Rationale
+,People & Leadership,Owner dependency,Exit / Transition,1,Cap score at 72/120,"If the owner is essential to daily operations, the business is not transferable. This is the single strongest buyer-risk indicator."
+,Financial Performance,Profitability,Exit / Transition,1,Cap score at 72/120,Materially sub-par profitability with no clear improvement path prevents premium exit outcomes regardless of other strengths.
+,Legal & Risk Management,Disputes,Exit / Transition,1,8% penalty,"Active disputes or significant regulatory exposure commonly reduce price, create escrow holdbacks, or kill deals outright."
+,Strategic Direction & Growth,Change readiness,Exit / Transition,1,10% penalty,"If the business is more than 3 years from transaction readiness, the current quality of the enterprise is not yet sale-ready."
+,Customer & Market Position,Concentration,Exit / Transition,1,6% penalty,High concentration is one of the most common valuation discounts because revenue is not viewed as durable.
+,People & Leadership,Owner dependency,Grow,1,10% penalty,A business cannot scale sustainably if it depends entirely on the owner's personal capacity.
+,Operations & Scalability,Scalability,Grow,1,8% penalty,"If the operating model cannot scale without disproportionate cost, growth destroys value rather than creating it."
+,Financial Performance,Profitability,Improve Profitability,1,Priority flag only,This should become the top recommendation regardless of score elsewhere — it is the core issue for this goal.
