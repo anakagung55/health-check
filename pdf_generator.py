@@ -1,4 +1,4 @@
-import pdfkit
+from weasyprint import HTML
 from jinja2 import Environment, FileSystemLoader
 import os
 from datetime import datetime
@@ -6,27 +6,25 @@ from datetime import datetime
 def create_healthcheck_pdf(user_data, score_percentage, answers):
     """
     Mengambil data user dan jawaban, memasukkannya ke template HTML,
-    lalu mengubahnya menjadi file PDF.
+    lalu mengubahnya menjadi file PDF menggunakan WeasyPrint.
     """
     # 1. Siapkan folder output
     output_dir = "output"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         
-    pdf_path = os.path.join(output_dir, f"BlueRock_Report_{user_data.get('name', 'User')}.pdf")
+    pdf_path = os.path.join(output_dir, f"BlueRock_Report_{user_data.get('company', 'Company').replace(' ', '_')}.pdf")
 
-    # 2. Setup Jinja2 Environment untuk membaca folder 'templates'
+    # 2. Setup Jinja2 Environment
     env = Environment(loader=FileSystemLoader('templates'))
     template = env.get_template('report_template.html')
 
-    # 3. Siapkan Data Dinamis (Mapping variabel ke HTML)
-    # Catatan: Ini data dummy untuk sementara menyesuaikan template SEO kamu.
-    # Nanti kita bisa ubah logic ini untuk membaca jawaban BVA yang sebenarnya.
+    # 3. Siapkan Data Dinamis (Dummy data agar HTML tetap cantik)
     template_vars = {
         "client_name": user_data.get("company", "Valued Client"),
         "client_url": "Confidential Assessment",
         "report_date": datetime.now().strftime("%d %B %Y"),
-        "audit_score": round(float(score_percentage.replace('%', '')) / 10, 1), # Konversi 85% jadi 8.5
+        "audit_score": round(float(score_percentage.replace('%', '')) / 10, 1),
         "score_label": "Action Required" if float(score_percentage.replace('%', '')) < 50 else "Strong Performer",
         "monetization_text": "Based on your recent assessment, here is the breakdown of your operational health.",
         "google_rankings": [
@@ -52,20 +50,7 @@ def create_healthcheck_pdf(user_data, score_percentage, answers):
     # 4. Render HTML dengan data
     rendered_html = template.render(template_vars)
 
-    # 5. Konversi HTML ke PDF
-    # Konfigurasi agar wkhtmltopdf berjalan mulus (bypass proteksi server)
-    options = {
-        'page-size': 'A4',
-        'margin-top': '0mm',
-        'margin-right': '0mm',
-        'margin-bottom': '0mm',
-        'margin-left': '0mm',
-        'encoding': "UTF-8",
-        'enable-local-file-access': None,
-        'no-outline': None,
-        'print-media-type': None
-    }
-    
-    pdfkit.from_string(rendered_html, pdf_path, options=options)
+    # 5. Konversi ke PDF
+    HTML(string=rendered_html).write_pdf(pdf_path)
     
     return pdf_path
