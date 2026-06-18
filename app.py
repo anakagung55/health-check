@@ -106,54 +106,60 @@ else:
                 
                 submit_finance = st.form_submit_button("Submit Assessment 🚀", type="primary")
                 
-                if submit_finance:
-                    with st.spinner("Saving your responses..."):
-                        from streamlit_gsheets import GSheetsConnection
+            # --- OUTSIDE THE FORM BLOCK ---
+            # Logika ini sekarang sejajar dengan "with st.form", bukan di dalamnya
+            if submit_finance:
+                with st.spinner("Saving your responses & Generating Report..."):
+                    from streamlit_gsheets import GSheetsConnection
+                    
+                    total_score = sum(finance_answers.values())
+                    max_score = len(finance_df) * 5
+                    score_percentage = round((total_score / max_score) * 100, 2)
+                    
+                    try:
+                        conn = st.connection("gsheets", type=GSheetsConnection)
+                        sheet_url = os.getenv("GSHEET_URL")
                         
-                        total_score = sum(finance_answers.values())
-                        max_score = len(finance_df) * 5
-                        score_percentage = round((total_score / max_score) * 100, 2)
+                        existing_data = conn.read(spreadsheet=sheet_url, usecols=list(range(10)), ttl=0).dropna(how="all")
                         
-                        try:
-                            conn = st.connection("gsheets", type=GSheetsConnection)
-                            sheet_url = os.getenv("GSHEET_URL")
-                            
-                            existing_data = conn.read(spreadsheet=sheet_url, usecols=list(range(10)), ttl=0).dropna(how="all")
-                            
-                            new_row_values = [
-                                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                st.session_state.user_data.get('name', ''),
-                                st.session_state.user_data.get('email', ''),
-                                st.session_state.user_data.get('company', ''),
-                                st.session_state.user_data.get('role', ''),
-                                "Finance Function Health Check",
-                                "N/A",
-                                f"{score_percentage}%",
-                                "Generic Webpage Submission",
-                                str(finance_answers)
-                            ]
-                            
-                            new_data_df = pd.DataFrame([new_row_values], columns=existing_data.columns)
-                            updated_data = pd.concat([existing_data, new_data_df], ignore_index=True)
-                            
-                            conn.update(spreadsheet=sheet_url, data=updated_data)
-                            st.success(f"✅ Assessment submitted successfully! Your preliminary score is {score_percentage}%.")
-                            from pdf_generator import create_healthcheck_pdf
-                            with st.spinner("Generating your PDF Report..."):
-                                pdf_path = create_healthcheck_pdf(
-                                    user_data=st.session_state.user_data,
-                                    score_percentage=f"{score_percentage}%",
-                                    answers=finance_answers
-                                )
-                                with open(pdf_path, "rb") as pdf_file:
-                                    st.download_button(
-                                        label="📥 Download Your Full Report (PDF)",
-                                        data=pdf_file,
-                                        file_name=f"BlueRock_Finance_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
-                                        mime="application/pdf"
-                                    )
-                        except Exception as e:
-                            st.error(f"Failed to save data. Error: {e}")
+                        new_row_values = [
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            st.session_state.user_data.get('name', ''),
+                            st.session_state.user_data.get('email', ''),
+                            st.session_state.user_data.get('company', ''),
+                            st.session_state.user_data.get('role', ''),
+                            "Finance Function Health Check",
+                            "N/A",
+                            f"{score_percentage}%",
+                            "Generic Webpage Submission",
+                            str(finance_answers)
+                        ]
+                        
+                        new_data_df = pd.DataFrame([new_row_values], columns=existing_data.columns)
+                        updated_data = pd.concat([existing_data, new_data_df], ignore_index=True)
+                        
+                        conn.update(spreadsheet=sheet_url, data=updated_data)
+                        st.success(f"✅ Assessment submitted successfully! Your preliminary score is {score_percentage}%.")
+                    except Exception as e:
+                        st.error(f"Failed to save data. Error: {e}")
+
+                    # --- GENERATE PDF ---
+                    from pdf_generator import create_healthcheck_pdf
+                    try:
+                        pdf_path = create_healthcheck_pdf(
+                            user_data=st.session_state.user_data,
+                            score_percentage=f"{score_percentage}%",
+                            answers=finance_answers
+                        )
+                        with open(pdf_path, "rb") as pdf_file:
+                            st.download_button(
+                                label="📥 Download Your Full Report (PDF)",
+                                data=pdf_file,
+                                file_name=f"BlueRock_Finance_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
+                                mime="application/pdf"
+                            )
+                    except Exception as e:
+                        st.error(f"Failed to generate PDF. Error: {e}")
 
         except Exception as e:
             st.error(f"Cannot load Finance questions. Please ensure data/finance_questions.csv exists. Error: {e}")
