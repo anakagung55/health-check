@@ -324,18 +324,42 @@ else:
                         with st.expander("View Technical Breakdown"):
                             st.json(result['details'])
                             st.write("Raw Extracted Answers:", st.session_state.extracted_data)
-                            # --- GENERATE PDF ---
-                        from pdf_generator import create_healthcheck_pdf
-                        with st.spinner("Generating your PDF Report..."):
-                            pdf_path = create_healthcheck_pdf(
-                                user_data=st.session_state.user_data,
-                                score_percentage=f"{result['score_percentage']}%",
-                                answers=st.session_state.extracted_data
+                        # --- GENERATE PDF DENGAN PROGRESS BAR ---
+                    import time
+                    from pdf_generator import create_healthcheck_pdf
+                    
+                    st.markdown("---")
+                    progress_text = "Preparing your custom PDF Report... Please wait."
+                    my_bar = st.progress(0, text=progress_text)
+                    
+                    try:
+                        # Simulasi proses loading agar user tahu sistem sedang bekerja
+                        time.sleep(0.5)
+                        my_bar.progress(30, text="Analyzing assessment data...")
+                        
+                        time.sleep(1)
+                        my_bar.progress(60, text="Rendering PDF visuals & layout...")
+                        
+                        # Proses aslinya berjalan di sini
+                        pdf_path = create_healthcheck_pdf(
+                            user_data=st.session_state.user_data,
+                            score_percentage=result['score_percentage'], # Untuk Route B, ubah score_percentage jadi result['score_percentage']
+                            answers=st.session_state.extracted_data # Untuk Route B, ubah finance_answers jadi st.session_state.extracted_data
+                        )
+                        
+                        my_bar.progress(100, text="Report generated successfully! 🎉")
+                        time.sleep(0.5)
+                        my_bar.empty() # Sembunyikan progress bar setelah selesai
+                        
+                        # Munculkan tombol download
+                        with open(pdf_path, "rb") as pdf_file:
+                            st.download_button(
+                                label="📥 Download Your Full Report (PDF)",
+                                data=pdf_file,
+                                file_name=f"BlueRock_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
+                                mime="application/pdf",
+                                type="primary"
                             )
-                            with open(pdf_path, "rb") as pdf_file:
-                                st.download_button(
-                                    label="📥 Download Your Full Report (PDF)",
-                                    data=pdf_file,
-                                    file_name=f"BlueRock_BVA_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
-                                    mime="application/pdf"
-                                )
+                    except Exception as e:
+                        my_bar.empty()
+                        st.error(f"Failed to generate PDF. Error: {e}")
