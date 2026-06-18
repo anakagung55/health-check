@@ -5,34 +5,61 @@
 <title>Diagnostic Report - {{ client_name }}</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-@page { size: A4 landscape; margin: 0; }
+/* NATIVE PAGE SIZING & MARGINS */
+@page { 
+  size: A4 landscape; 
+  margin: 15mm 20mm; 
+  @left-middle {
+      content: "";
+      background-color: #0027E3;
+      width: 8px;
+  }
+}
+
 :root {
   --blue: #0027E3; --aqua: #00FFCC; --navy: #06103A; --slate: #3D4A6B;
   --muted: #7A849E; --border: #E4E9F5; --surface: #F7F9FE; --white: #FFFFFF;
   --font-body: 'Noto Sans', sans-serif; --font-display: 'Noto Serif', serif;
 }
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: var(--font-body); background: #f0f0f0; color: var(--navy); font-size: 14px; }
-.page { width: 297mm; height: 210mm; background: var(--white); position: relative; display: flex; flex-direction: column; page-break-after: always; overflow: hidden; }
-.page::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 8px; background: var(--blue); }
-.header { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px 20px 48px; border-bottom: 2px solid var(--border); }
+body { font-family: var(--font-body); color: var(--navy); font-size: 14px; background: #FFF; }
+
+/* REMOVE FIXED HEIGHTS & LET FLEXBOX FLOW */
+.page { 
+  page-break-after: always; 
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%; 
+}
+
+.header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 2px solid var(--border); margin-bottom: 20px;}
 .logo-area { display: flex; align-items: center; gap: 12px; font-weight: 700; color: var(--blue); font-size: 16px; }
 .logo-box { background: var(--blue); color: var(--white); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 14px; font-weight: bold; }
 .report-title { color: var(--muted); font-size: 14px; font-weight: 600; }
-.footer { margin-top: auto; display: flex; justify-content: space-between; padding: 15px 40px 15px 48px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); }
-.content { padding: 40px 40px 40px 48px; display: flex; gap: 40px; flex: 1; }
-.col-left { flex: 1; display: flex; flex-direction: column; }
-.col-right { flex: 1.2; display: flex; flex-direction: column; gap: 14px; }
+
+.footer { margin-top: 30px; display: flex; justify-content: space-between; padding-top: 15px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); page-break-inside: avoid; }
+
+.content { display: flex; flex-direction: row; gap: 40px; }
+.col-left { width: 45%; display: flex; flex-direction: column; }
+.col-right { width: 55%; display: flex; flex-direction: column; gap: 14px; }
+
 h1 { font-family: var(--font-display); font-size: 42px; line-height: 1.1; color: var(--navy); margin-bottom: 20px; }
 h1 em { color: var(--blue); font-style: italic; }
 h2 { font-family: var(--font-display); font-size: 32px; color: var(--navy); margin-bottom: 10px; border-bottom: 3px solid var(--aqua); padding-bottom: 10px; display: inline-block; }
-.intro { font-size: 14px; color: var(--slate); line-height: 1.6; }
-.score-box { background: var(--surface); border: 1px solid var(--border); border-left: 5px solid var(--blue); padding: 25px; border-radius: 12px; margin-top: auto; }
+
+.intro { font-size: 14px; color: var(--slate); line-height: 1.6; margin-bottom: 20px;}
+
+.score-box { background: var(--surface); border: 1px solid var(--border); border-left: 5px solid var(--blue); padding: 25px; border-radius: 12px; margin-top: auto; page-break-inside: avoid;}
 .score-header { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: bold; text-transform: uppercase; color: var(--muted); }
 .score-value { font-size: 48px; font-weight: 900; color: var(--navy); margin: 10px 0; }
 .score-label { font-size: 18px; font-weight: bold; color: var(--blue); }
-.cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-.card { border: 1px solid var(--border); padding: 20px; border-radius: 10px; border-top: 4px solid var(--slate); background: #fafafa; }
+
+/* SWAP GRID FOR SAFEST FLEXBOX ROW PATTERN */
+.cards-grid { display: flex; flex-wrap: wrap; gap: 2%; margin-top: 20px; }
+.card { width: 49%; border: 1px solid var(--border); padding: 15px; border-radius: 10px; border-top: 4px solid var(--slate); background: #fafafa; margin-bottom: 15px; page-break-inside: avoid; }
+
 .card.high { border-top-color: #0027E3; background: #F5F9FF;}
 .card.med { border-top-color: #F0A020; }
 .card.low { border-top-color: #E8405A; background: #FFF5F7;}
@@ -68,7 +95,7 @@ h2 { font-family: var(--font-display); font-size: 32px; color: var(--navy); marg
     <div class="col-right" style="justify-content: center;">
        <h3 style="color: var(--muted); text-transform: uppercase; font-size: 12px; letter-spacing: 1px; margin-bottom: 10px;">AI Identified Focus Areas</h3>
        {% for highlight in ai.highlights %}
-       <div style="background: white; border: 1px solid var(--border); padding: 18px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+       <div style="background: white; border: 1px solid var(--border); padding: 18px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-bottom: 12px;">
          <span style="font-weight: bold; font-size: 15px;">{{ highlight.title }}</span>
          <span style="font-size: 12px; color: var(--blue); font-weight: bold; background: var(--surface); padding: 6px 14px; border-radius: 15px;">{{ highlight.status }}</span>
        </div>
