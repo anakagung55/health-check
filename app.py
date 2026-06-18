@@ -1,12 +1,72 @@
 import streamlit as st
 import os
 import pandas as pd
+import google.generativeai as genai
+import json
 from datetime import datetime
 from dotenv import load_dotenv
+
 
 # Load konfigurasi environment
 load_dotenv()
 
+def generate_ai_report_insights(answers, score, company_name, assessment_type):
+    """Melempar data ke Gemini untuk meracik isi laporan PDF"""
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+    
+    system_prompt = f"""
+    You are a Senior Business Consultant at BlueRock Advisory.
+    You need to write a highly professional, dense, and actionable diagnostic report for a client named '{company_name}'.
+    They just completed the '{assessment_type}' and scored {score}.
+    
+    Here is their raw assessment data (1-5 scale or A-D spectrum):
+    {answers}
+    
+    Based on their answers, generate a detailed report content in strict JSON format. 
+    The JSON must match this exact structure:
+    {{
+        "executive_summary_paragraphs": [
+            "Paragraph 1: High-level observation of their score and overall health.",
+            "Paragraph 2: The most critical risk or weakness discovered.",
+            "Paragraph 3: The immediate opportunity or next step they should take."
+        ],
+        "highlights": [
+            {{"title": "Biggest Strength", "status": "Optimized"}},
+            {{"title": "Core Weakness", "status": "Critical Risk"}},
+            {{"title": "Key Opportunity", "status": "Growth Potential"}}
+        ],
+        "pillars": [
+            {{
+                "name": "Area requiring immediate attention based on their lowest scores",
+                "description": "A 2-sentence professional explanation of why this area matters.",
+                "details": [
+                    {{"question": "Specific Issue 1", "insight": "Deep 3-sentence consulting insight on how to fix this.", "score_text": "Low Score", "color_class": "low"}},
+                    {{"question": "Specific Issue 2", "insight": "Deep 3-sentence consulting insight on how to fix this.", "score_text": "Low Score", "color_class": "low"}}
+                ]
+            }},
+            {{
+                "name": "Area of existing strength based on their highest scores",
+                "description": "A 2-sentence professional explanation of how to leverage this.",
+                "details": [
+                    {{"question": "Strong Capability 1", "insight": "Deep 3-sentence consulting insight on maintaining this.", "score_text": "High Score", "color_class": "high"}}
+                ]
+            }}
+        ]
+    }}
+    
+    IMPORTANT: Make the "insight" text dense, realistic, and actionable. Avoid fluff. Write like a Big 4 consultant.
+    Do NOT include markdown like ```json. Return ONLY the JSON object.
+    """
+    
+    try:
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        response = model.generate_content(system_prompt)
+        
+        raw_text = response.text.replace("```json", "").replace("```", "").strip()
+        return json.loads(raw_text)
+    except Exception as e:
+        print(f"Gemini Analysis Error: {e}")
+        return None # Akan fallback ke data dummy jika gagal
 # --- KONFIGURASI HALAMAN ---
 st.set_page_config(
     page_title=f"{os.getenv('CLIENT_NAME', 'BlueRock')} Health Check", 
@@ -324,7 +384,7 @@ else:
                         with st.expander("View Technical Breakdown"):
                             st.json(result['details'])
                             st.write("Raw Extracted Answers:", st.session_state.extracted_data)
-                        # --- GENERATE PDF DENGAN PROGRESS BAR ---
+                    # --- GENERATE PDF DENGAN PROGRESS BAR ---
                     import time
                     from pdf_generator import create_healthcheck_pdf
                     
@@ -336,7 +396,18 @@ else:
                         # Simulasi proses loading agar user tahu sistem sedang bekerja
                         time.sleep(0.5)
                         my_bar.progress(30, text="Analyzing assessment data...")
+                        time.sleep(0.5)
+                        my_bar.progress(50, text="AI Consultant is writing your personalized insights...")
                         
+                        ai_insights = generate_ai_report_insights(
+                            answers=st.session_state.extracted_data, # Atau st.session_state.extracted_data untuk Route B
+                            score=result['score_percentage'],
+                            company_name=st.session_state.user_data['company'],
+                            assessment_type=st.session_state.user_data['assessment_type']
+                        )
+                        
+                        time.sleep(0.5)
+                        my_bar.progress(75, text="Rendering A4 slide deck visuals...")
                         time.sleep(1)
                         my_bar.progress(60, text="Rendering PDF visuals & layout...")
                         
@@ -344,7 +415,8 @@ else:
                         pdf_path = create_healthcheck_pdf(
                             user_data=st.session_state.user_data,
                             score_percentage=result['score_percentage'], # Untuk Route B, ubah score_percentage jadi result['score_percentage']
-                            answers=st.session_state.extracted_data # Untuk Route B, ubah finance_answers jadi st.session_state.extracted_data
+                            answers=st.session_state.extracted_data, # Untuk Route B, ubah finance_answers jadi st.session_state.extracted_data
+                            ai_data=ai_insights
                         )
                         
                         my_bar.progress(100, text="Report generated successfully! 🎉")
