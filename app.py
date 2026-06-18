@@ -394,49 +394,143 @@ else:
                     st.error(f"Failed to process AI response. (Log: {e})")
 
         st.markdown("---")
+        
+        # Pisahkan definisi kolom hanya untuk penempatan tombol
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("Reset Form & Chat"):
+            if st.button("Reset Form & Chat", use_container_width=True):
                 st.session_state.clear()
                 st.rerun()
         with col2:
-            if st.button("Finish & Calculate Score 📊", type="primary"):
-                from scoring_engine import calculate_bva_score 
-                from streamlit_gsheets import GSheetsConnection
-                
-                if not st.session_state.extracted_data:
-                    st.warning("No data extracted yet. Please answer a few questions first!")
-                else:
-                    with st.spinner("Calculating your BVA Score & Saving Data..."):
-                        result = calculate_bva_score(
-                            extracted_answers=st.session_state.extracted_data,
-                            user_goal=st.session_state.user_data['bva_goal']
-                        )
+            # Simpan state tombol ke dalam variabel finish_clicked
+            finish_clicked = st.button("Finish & Calculate Score 📊", type="primary", use_container_width=True)
+            
+        # Pindahkan SEMUA logic hasil dan loading KELUAR dari blok with col2:
+        if finish_clicked:
+            from scoring_engine import calculate_bva_score 
+            from streamlit_gsheets import GSheetsConnection
+            
+            if not st.session_state.extracted_data:
+                st.warning("No data extracted yet. Please answer a few questions first!")
+            else:
+                st.markdown("---")
+                with st.spinner("Calculating your BVA Score & Saving Data..."):
+                    result = calculate_bva_score(
+                        extracted_answers=st.session_state.extracted_data,
+                        user_goal=st.session_state.user_data['bva_goal']
+                    )
+                    
+                    try:
+                        conn = st.connection("gsheets", type=GSheetsConnection)
+                        sheet_url = os.getenv("GSHEET_URL")
+                        existing_data = conn.read(spreadsheet=sheet_url, usecols=list(range(10)), ttl=0).dropna(how="all")
                         
+                        new_row_values = [
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            st.session_state.user_data.get('name', ''),
+                            st.session_state.user_data.get('email', ''),
+                            st.session_state.user_data.get('company', ''),
+                            st.session_state.user_data.get('role', ''),
+                            st.session_state.user_data.get('assessment_type', ''),
+                            st.session_state.user_data.get('bva_goal', ''),
+                            f"{result['score_percentage']}%",
+                            result['band'],
+                            str(st.session_state.extracted_data)
+                        ]
+                        
+                        new_data_df = pd.DataFrame([new_row_values], columns=existing_data.columns)
+                        updated_data = pd.concat([existing_data, new_data_df], ignore_index=True)
+                        conn.update(spreadsheet=sheet_url, data=updated_data)
+                        
+                    except Exception as e:
+                        st.error(f"Gagal menyimpan ke database. Error: {e}")
+
+                # TAMPILAN HASIL DI TENGAH (FULL WIDTH)
+                st.subheader("🎯 Your Assessment Results")
+                
+                # Pakai kolom baru khusus untuk merapikan skor biar estetik
+                res_col1, res_col2 = st.columns(2)
+                with res_col1:
+                    st.metric(label="Overall Business Health Score", value=f"{result['score_percentage']}%")
+                with res_col2:
+                    st.markdown(f"### Classification:\n:{result['color']}[**{result['band']}**]")
+
+                # --- ROUTE B: PROGRESS BAR & AI GENERATION ---
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown("### ⚙️ Generating Your Executive Report")
+                
+                # Container loading jadi full width
+                loading_container = st.container(border=True)
+                with loading_container:
+                    my_bar = st.progress(0, text="Preparing your custom BVA PDF Report... Please wait.")
+                    
+                    ai_result = {"data": None, "done": False, "error": None}
+                    
+                    # EKSTRAK DATA KE VARIABEL LOKAL
+                    current_company = st.session_state.user_data['company']
+                    current_assessment = st.session_state.user_data['assessment_type']
+                    current_extracted_data = st.session_state.extracted_data.copy()
+                    
+                    def fetch_ai_insights_bva():
                         try:
-                            conn = st.connection("gsheets", type=GSheetsConnection)
-                            sheet_url = os.getenv("GSHEET_URL")
-                            existing_data = conn.read(spreadsheet=sheet_url, usecols=list(range(10)), ttl=0).dropna(how="all")
-                            
-                            new_row_values = [
-                                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                st.session_state.user_data.get('name', ''),
-                                st.session_state.user_data.get('email', ''),
-                                st.session_state.user_data.get('company', ''),
-                                st.session_state.user_data.get('role', ''),
-                                st.session_state.user_data.get('assessment_type', ''),
-                                st.session_state.user_data.get('bva_goal', ''),
-                                f"{result['score_percentage']}%",
-                                result['band'],
-                                str(st.session_state.extracted_data)
-                            ]
-                            
-                            new_data_df = pd.DataFrame([new_row_values], columns=existing_data.columns)
-                            updated_data = pd.concat([existing_data, new_data_df], ignore_index=True)
-                            conn.update(spreadsheet=sheet_url, data=updated_data)
-                            
+                            ai_result["data"] = generate_ai_report_insights(
+                                answers=current_extracted_data,
+                                score=f"{result['score_percentage']}%",
+                                company_name=current_company,
+                                assessment_type=current_assessment
+                            )
                         except Exception as e:
-                            st.error(f"Gagal menyimpan ke database. Error: {e}")
+                            ai_result["error"] = e
+                        finally:
+                            ai_result["done"] = True
+
+                    # Mulai proses AI
+                    ai_thread = threading.Thread(target=fetch_ai_insights_bva)
+                    ai_thread.start()
+                    
+                    # Animasi progress bar
+                    progress_val = 10
+                    my_bar.progress(progress_val, text="Analyzing conversational logs...")
+                    
+                    while not ai_result["done"]:
+                        if progress_val < 85:
+                            progress_val += 1
+                            my_bar.progress(progress_val, text=f"AI Consultant is writing deep evaluation pages... ({progress_val}%)")
+                        time.sleep(0.3)
+                    
+                    # Selesaikan PDF
+                    if ai_result["error"]:
+                        my_bar.empty()
+                        st.error(f"Failed to generate AI insights. Error: {ai_result['error']}")
+                    else:
+                        my_bar.progress(90, text="Compiling A4 landscape layout...")
+                        try:
+                            from pdf_generator import create_healthcheck_pdf
+                            pdf_path = create_healthcheck_pdf(
+                                user_data=st.session_state.user_data,
+                                score_percentage=f"{result['score_percentage']}%",
+                                answers=current_extracted_data,
+                                ai_data=ai_result["data"]
+                            )
+                            
+                            my_bar.progress(100, text="Report generated successfully! 🎉")
+                            time.sleep(0.5)
+                            my_bar.empty()
+                            
+                            st.success("✅ **Executive Report is ready for download!**")
+                            
+                            with open(pdf_path, "rb") as pdf_file:
+                                st.download_button(
+                                    label="📥 Download Your Full Report (PDF)",
+                                    data=pdf_file,
+                                    file_name=f"BlueRock_BVA_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
+                                    mime="application/pdf",
+                                    type="primary",
+                                    use_container_width=True
+                                )
+                        except Exception as e:
+                            my_bar.empty()
+                            st.error(f"Failed to generate PDF. Error: {e}")
 
                         st.markdown("---")
                         st.subheader("🎯 Your Assessment Results")
