@@ -5,15 +5,10 @@
 <title>Diagnostic Report - {{ client_name }}</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-/* NATIVE PAGE SIZING & MARGINS */
+/* 1. NATIVE PAGE SIZING */
 @page { 
   size: A4 landscape; 
-  margin: 15mm 20mm; 
-  @left-middle {
-      content: "";
-      background-color: #0027E3;
-      width: 8px;
-  }
+  margin: 12mm 15mm 12mm 15mm; 
 }
 
 :root {
@@ -23,49 +18,73 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: var(--font-body); color: var(--navy); font-size: 14px; background: #FFF; }
 
-/* REMOVE FIXED HEIGHTS & LET FLEXBOX FLOW */
+/* 2. BODY SEBAGAI KANVAS UTAMA & GARIS BIRU ANTI-PUTUS */
+body { 
+  font-family: var(--font-body); 
+  color: var(--navy); 
+  font-size: 13px; /* Sedikit dikecilkan agar aman untuk teks AI yang panjang */
+  background: #FFF; 
+  border-left: 8px solid var(--blue);
+  padding-left: 20px;
+}
+
+/* 3. PAGE WRAPPER STANDARD */
 .page { 
   page-break-after: always; 
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 100%; 
+  height: auto;
+  min-height: 175mm; /* Memastikan footer tetap di bawah jika konten sedikit */
+}
+.page:last-child {
+  page-break-after: avoid;
 }
 
-.header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 2px solid var(--border); margin-bottom: 20px;}
-.logo-area { display: flex; align-items: center; gap: 12px; font-weight: 700; color: var(--blue); font-size: 16px; }
-.logo-box { background: var(--blue); color: var(--white); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 14px; font-weight: bold; }
-.report-title { color: var(--muted); font-size: 14px; font-weight: 600; }
+/* --- HEADER --- */
+.header { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 12px; border-bottom: 2px solid var(--border); margin-bottom: 15px;}
+.logo-area { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--blue); font-size: 16px; }
+.logo-box { background: var(--blue); color: var(--white); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 13px; font-weight: bold; }
+.report-title { color: var(--muted); font-size: 13px; font-weight: 600; }
 
-.footer { margin-top: 30px; display: flex; justify-content: space-between; padding-top: 15px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); page-break-inside: avoid; }
+/* --- FOOTER --- */
+.footer { margin-top: auto; display: flex; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); page-break-inside: avoid; }
 
-.content { display: flex; flex-direction: row; gap: 40px; }
-.col-left { width: 45%; display: flex; flex-direction: column; }
-.col-right { width: 55%; display: flex; flex-direction: column; gap: 14px; }
+/* --- CONTENT LAYOUT --- */
+.content { display: flex; flex-direction: row; gap: 35px; align-items: flex-start; }
+.col-left { width: 48%; display: flex; flex-direction: column; }
+.col-right { width: 52%; display: flex; flex-direction: column; gap: 12px; }
 
-h1 { font-family: var(--font-display); font-size: 42px; line-height: 1.1; color: var(--navy); margin-bottom: 20px; }
+/* --- TYPOGRAPHY --- */
+h1 { font-family: var(--font-display); font-size: 36px; line-height: 1.1; color: var(--navy); margin-bottom: 15px; }
 h1 em { color: var(--blue); font-style: italic; }
-h2 { font-family: var(--font-display); font-size: 32px; color: var(--navy); margin-bottom: 10px; border-bottom: 3px solid var(--aqua); padding-bottom: 10px; display: inline-block; }
+h2 { font-family: var(--font-display); font-size: 28px; color: var(--navy); margin-bottom: 10px; border-bottom: 3px solid var(--aqua); padding-bottom: 8px; display: inline-block; }
 
-.intro { font-size: 14px; color: var(--slate); line-height: 1.6; margin-bottom: 20px;}
+.intro { font-size: 13px; color: var(--slate); line-height: 1.5; margin-bottom: 15px;}
+.intro p { margin-bottom: 8px; text-align: justify; }
 
-.score-box { background: var(--surface); border: 1px solid var(--border); border-left: 5px solid var(--blue); padding: 25px; border-radius: 12px; margin-top: auto; page-break-inside: avoid;}
-.score-header { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: bold; text-transform: uppercase; color: var(--muted); }
-.score-value { font-size: 48px; font-weight: 900; color: var(--navy); margin: 10px 0; }
-.score-label { font-size: 18px; font-weight: bold; color: var(--blue); }
+/* --- SCORE BOX --- */
+.score-box { background: var(--surface); border: 1px solid var(--border); border-left: 5px solid var(--blue); padding: 18px 20px; border-radius: 10px; margin-top: 10px; page-break-inside: avoid; }
+.score-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: bold; text-transform: uppercase; color: var(--muted); }
+.score-value { font-size: 42px; font-weight: 900; color: var(--navy); margin: 8px 0; }
+.score-label { font-size: 16px; font-weight: bold; color: var(--blue); }
 
-/* SWAP GRID FOR SAFEST FLEXBOX ROW PATTERN */
-.cards-grid { display: flex; flex-wrap: wrap; gap: 2%; margin-top: 20px; }
-.card { width: 49%; border: 1px solid var(--border); padding: 15px; border-radius: 10px; border-top: 4px solid var(--slate); background: #fafafa; margin-bottom: 15px; page-break-inside: avoid; }
+/* --- PILLAR CARDS --- */
+.cards-grid { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; margin-bottom: 20px; }
+.card { width: calc(50% - 7.5px); border: 1px solid var(--border); padding: 15px; border-radius: 8px; border-top: 4px solid var(--slate); background: #fafafa; page-break-inside: avoid; }
 
 .card.high { border-top-color: #0027E3; background: #F5F9FF;}
 .card.med { border-top-color: #F0A020; }
 .card.low { border-top-color: #E8405A; background: #FFF5F7;}
-.c-title { font-size: 16px; font-weight: bold; color: var(--navy); margin-bottom: 8px; }
-.c-desc { font-size: 12.5px; color: var(--slate); line-height: 1.6; }
-.c-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-top: 15px; background: var(--white); border: 1px solid var(--border); }
+.c-title { font-size: 14px; font-weight: bold; color: var(--navy); margin-bottom: 6px; }
+.c-desc { font-size: 12px; color: var(--slate); line-height: 1.5; margin-bottom: 6px;}
+.c-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-top: 10px; background: var(--white); border: 1px solid var(--border); }
+
+/* --- BOTTOM LINE BOX --- */
+.bottom-line-box { background: var(--navy); color: var(--white); padding: 20px 25px; border-radius: 10px; border-left: 5px solid var(--aqua); page-break-inside: avoid; margin-bottom: 10px;}
+.bottom-line-box h4 { font-family: var(--font-display); font-size: 16px; margin-bottom: 8px; color: var(--aqua); }
+.bottom-line-box p { font-size: 13px; line-height: 1.5; opacity: 0.9; text-align: justify; }
 </style>
 </head>
 <body>
@@ -81,7 +100,7 @@ h2 { font-family: var(--font-display); font-size: 32px; color: var(--navy); marg
       <h1>Executive<br><em>Summary</em></h1>
       <div class="intro">
         {% for paragraph in ai.executive_summary_paragraphs %}
-        <p>{{ paragraph }}</p><br>
+        <p>{{ paragraph }}</p>
         {% endfor %}
       </div>
 
@@ -92,12 +111,12 @@ h2 { font-family: var(--font-display); font-size: 32px; color: var(--navy); marg
       </div>
     </div>
 
-    <div class="col-right" style="justify-content: center;">
-       <h3 style="color: var(--muted); text-transform: uppercase; font-size: 12px; letter-spacing: 1px; margin-bottom: 10px;">AI Identified Focus Areas</h3>
+    <div class="col-right" style="justify-content: center; padding-top: 15px;">
+       <h3 style="color: var(--muted); text-transform: uppercase; font-size: 12px; letter-spacing: 1px; margin-bottom: 12px;">AI Identified Focus Areas</h3>
        {% for highlight in ai.highlights %}
-       <div style="background: white; border: 1px solid var(--border); padding: 18px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-bottom: 12px;">
-         <span style="font-weight: bold; font-size: 15px;">{{ highlight.title }}</span>
-         <span style="font-size: 12px; color: var(--blue); font-weight: bold; background: var(--surface); padding: 6px 14px; border-radius: 15px;">{{ highlight.status }}</span>
+       <div style="background: white; border: 1px solid var(--border); padding: 16px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-bottom: 12px; page-break-inside: avoid;">
+         <span style="font-weight: bold; font-size: 14px;">{{ highlight.title }}</span>
+         <span style="font-size: 11px; color: var(--blue); font-weight: bold; background: var(--surface); padding: 5px 12px; border-radius: 15px;">{{ highlight.status }}</span>
        </div>
        {% endfor %}
     </div>
@@ -116,28 +135,28 @@ h2 { font-family: var(--font-display); font-size: 32px; color: var(--navy); marg
     <div class="report-title">Strategic Deep Dive: {{ pillar.name }}</div>
   </div>
   
-  <div class="content" style="flex-direction: column;">
+  <div style="display: flex; flex-direction: column; flex-grow: 1;">
     <h2>{{ pillar.name }}</h2>
-    <p class="intro" style="font-size: 15px;">{{ pillar.description }}</p>
+    <p class="intro" style="font-size: 14px; margin-bottom: 0;">{{ pillar.description }}</p>
     
     <div class="cards-grid">
       {% for item in pillar.details %}
       <div class="card {{ item.color_class }}">
         <div class="c-title">{{ item.question }}</div>
-        <div class="c-desc" style="margin-bottom: 8px;"><strong>Observation:</strong> {{ item.observation }}</div>
+        <div class="c-desc"><strong>Observation:</strong> {{ item.observation }}</div>
         <div class="c-desc"><strong>Recommendation:</strong> {{ item.recommendation }}</div>
         
-        <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end;">
             <div class="c-badge">{{ item.score_text }}</div>
-            <div style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">{{ item.impact_level }} Impact</div>
+            <div style="font-size: 10px; font-weight: bold; color: var(--muted); text-transform: uppercase;">{{ item.impact_level }} Impact</div>
         </div>
       </div>
       {% endfor %}
     </div>
 
-    <div style="margin-top: auto; background: var(--navy); color: var(--white); padding: 25px 30px; border-radius: 12px; border-left: 6px solid var(--aqua);">
-        <h4 style="font-family: var(--font-display); font-size: 18px; margin-bottom: 10px; color: var(--aqua);">Consultant's Bottom Line</h4>
-        <p style="font-size: 13.5px; line-height: 1.6; opacity: 0.9;">{{ pillar.bottom_line }}</p>
+    <div class="bottom-line-box">
+        <h4>Consultant's Bottom Line</h4>
+        <p>{{ pillar.bottom_line }}</p>
     </div>
   </div>
   
