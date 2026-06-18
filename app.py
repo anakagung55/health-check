@@ -237,13 +237,17 @@ else:
                 # Container untuk menangkap hasil dari thread
                 ai_result = {"data": None, "done": False, "error": None}
                 
+                # EKSTRAK DATA KE VARIABEL LOKAL DULU DI SINI
+                current_company = st.session_state.user_data['company']
+                current_assessment = st.session_state.user_data['assessment_type']
+                
                 def fetch_ai_insights():
                     try:
                         ai_result["data"] = generate_ai_report_insights(
                             answers=finance_answers,
                             score=f"{score_percentage}%",
-                            company_name=st.session_state.user_data['company'],
-                            assessment_type=st.session_state.user_data['assessment_type']
+                            company_name=current_company,      # Pakai variabel lokal
+                            assessment_type=current_assessment # Pakai variabel lokal
                         )
                     except Exception as e:
                         ai_result["error"] = e
@@ -444,13 +448,17 @@ else:
                     
                     ai_result = {"data": None, "done": False, "error": None}
                     
+                    # EKSTRAK DATA KE VARIABEL LOKAL DULU DI SINI
+                    current_company = st.session_state.user_data['company']
+                    current_assessment = st.session_state.user_data['assessment_type']
+                    
                     def fetch_ai_insights_bva():
                         try:
                             ai_result["data"] = generate_ai_report_insights(
                                 answers=st.session_state.extracted_data,
                                 score=result['score_percentage'],
-                                company_name=st.session_state.user_data['company'],
-                                assessment_type=st.session_state.user_data['assessment_type']
+                                company_name=current_company,      # Pakai variabel lokal
+                                assessment_type=current_assessment # Pakai variabel lokal
                             )
                         except Exception as e:
                             ai_result["error"] = e
