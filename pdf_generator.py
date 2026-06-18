@@ -22,14 +22,14 @@ def create_healthcheck_pdf(user_data, score_percentage, answers):
     else:
         band = "Action Required"
 
-    # STRUKTUR DATA MULTI-HALAMAN (Membuat halaman dinamis)
-    # Ini dikondisikan: Jika asesmen Finance, pilarnya SWOT. Jika BVA, pilarnya fungsi bisnis.
+    # STRUKTUR DATA MULTI-HALAMAN 
+    # Kata "items" sudah diganti menjadi "details" agar tidak error
     if user_data.get('assessment_type') == "Finance Function Health Check":
         pillars = [
             {
                 "name": "Strengths & Weaknesses",
                 "description": "Internal factors currently impacting your finance team's efficiency and reliability.",
-                "items": [
+                "details": [
                     {"question": "System Productivity", "insight": "Analysis of current financial software stack.", "score_text": "Based on input", "color_class": "high"},
                     {"question": "Key Person Risk", "insight": "Dependency on individual team members.", "score_text": "Based on input", "color_class": "low"},
                 ]
@@ -37,7 +37,7 @@ def create_healthcheck_pdf(user_data, score_percentage, answers):
             {
                 "name": "Opportunities & Threats",
                 "description": "External factors and future improvements for the finance function.",
-                "items": [
+                "details": [
                     {"question": "Automation Value", "insight": "Potential for measurable efficiency gains.", "score_text": "Based on input", "color_class": "high"},
                     {"question": "Cybersecurity", "insight": "Protection of sensitive financial data.", "score_text": "Based on input", "color_class": "med"},
                 ]
@@ -48,7 +48,7 @@ def create_healthcheck_pdf(user_data, score_percentage, answers):
             {
                 "name": "Financial & Strategic Health",
                 "description": "Review of your underlying profitability, records, and strategic growth plan.",
-                "items": [
+                "details": [
                     {"question": "Revenue Trend", "insight": "Evaluation of revenue trajectory over 3 years.", "score_text": "Recorded", "color_class": "high"},
                     {"question": "Strategic Plan", "insight": "Clarity of documented goals and metrics.", "score_text": "Recorded", "color_class": "med"},
                 ]
@@ -65,7 +65,7 @@ def create_healthcheck_pdf(user_data, score_percentage, answers):
             {"title": "Risk Management", "status": "Needs Review"},
             {"title": "Scalability & Systems", "status": "Optimized"}
         ],
-        "pillars": pillars # Data pilar ini yang akan mencetak halaman ke-2, ke-3 dst!
+        "pillars": pillars
     }
 
     rendered_html = template.render(template_vars)

@@ -176,7 +176,7 @@ h2 { font-family: var(--font-display); font-size: 32px; color: var(--navy); marg
     <p class="intro">{{ pillar.description }}</p>
     
     <div class="cards-grid">
-      {% for item in pillar.items %}
+      {% for item in pillar.details %}
       <div class="card {{ item.color_class }}">
         <div class="c-title">{{ item.question }}</div>
         <div class="c-desc">{{ item.insight }}</div>
