@@ -448,14 +448,15 @@ else:
                     
                     ai_result = {"data": None, "done": False, "error": None}
                     
-                    # EKSTRAK DATA KE VARIABEL LOKAL DULU DI SINI
+                    # 1. EKSTRAK SEMUA DATA KE VARIABEL LOKAL DULU DI SINI
                     current_company = st.session_state.user_data['company']
                     current_assessment = st.session_state.user_data['assessment_type']
+                    current_extracted_data = st.session_state.extracted_data.copy() # <--- TAMBAHAN BARU
                     
                     def fetch_ai_insights_bva():
                         try:
                             ai_result["data"] = generate_ai_report_insights(
-                                answers=st.session_state.extracted_data,
+                                answers=current_extracted_data,    # <--- PAKAI VARIABEL LOKAL INI
                                 score=result['score_percentage'],
                                 company_name=current_company,      # Pakai variabel lokal
                                 assessment_type=current_assessment # Pakai variabel lokal
@@ -465,7 +466,7 @@ else:
                         finally:
                             ai_result["done"] = True
 
-                    # 1. Mulai proses AI di background thread
+                    # 2. Mulai proses AI di background thread
                     ai_thread = threading.Thread(target=fetch_ai_insights_bva)
                     ai_thread.start()
                     
