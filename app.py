@@ -138,6 +138,20 @@ else:
                             
                             conn.update(spreadsheet=sheet_url, data=updated_data)
                             st.success(f"✅ Assessment submitted successfully! Your preliminary score is {score_percentage}%.")
+                            from pdf_generator import create_healthcheck_pdf
+                            with st.spinner("Generating your PDF Report..."):
+                                pdf_path = create_healthcheck_pdf(
+                                    user_data=st.session_state.user_data,
+                                    score_percentage=f"{score_percentage}%",
+                                    answers=finance_answers
+                                )
+                                with open(pdf_path, "rb") as pdf_file:
+                                    st.download_button(
+                                        label="📥 Download Your Full Report (PDF)",
+                                        data=pdf_file,
+                                        file_name=f"BlueRock_Finance_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
+                                        mime="application/pdf"
+                                    )
                         except Exception as e:
                             st.error(f"Failed to save data. Error: {e}")
 
@@ -304,3 +318,18 @@ else:
                         with st.expander("View Technical Breakdown"):
                             st.json(result['details'])
                             st.write("Raw Extracted Answers:", st.session_state.extracted_data)
+                            # --- GENERATE PDF ---
+                        from pdf_generator import create_healthcheck_pdf
+                        with st.spinner("Generating your PDF Report..."):
+                            pdf_path = create_healthcheck_pdf(
+                                user_data=st.session_state.user_data,
+                                score_percentage=f"{result['score_percentage']}%",
+                                answers=st.session_state.extracted_data
+                            )
+                            with open(pdf_path, "rb") as pdf_file:
+                                st.download_button(
+                                    label="📥 Download Your Full Report (PDF)",
+                                    data=pdf_file,
+                                    file_name=f"BlueRock_BVA_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
+                                    mime="application/pdf"
+                                )

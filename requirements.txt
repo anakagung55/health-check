@@ -3,3 +3,5 @@ google-generativeai
 python-dotenv
 st-gsheets-connection
 pandas
+jinja2
+pdfkit
