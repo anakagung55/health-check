@@ -4,6 +4,7 @@ import pandas as pd
 import google.generativeai as genai
 import json
 import time
+import threading
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -232,44 +233,67 @@ else:
 
                 # --- ROUTE A: PROGRESS BAR & AI GENERATION ---
                 my_bar = st.progress(0, text="Preparing your custom Finance PDF Report... Please wait.")
-                try:
-                    time.sleep(0.4)
-                    my_bar.progress(30, text="Crunching financial metrics...")
-                    
-                    ai_insights = generate_ai_report_insights(
-                        answers=finance_answers,
-                        score=f"{score_percentage}%",
-                        company_name=st.session_state.user_data['company'],
-                        assessment_type=st.session_state.user_data['assessment_type']
-                    )
-                    
-                    my_bar.progress(70, text="AI Consultant is writing deep analysis pages...")
-                    time.sleep(0.4)
-                    my_bar.progress(90, text="Compiling A4 landscape layout...")
-                    
-                    from pdf_generator import create_healthcheck_pdf
-                    pdf_path = create_healthcheck_pdf(
-                        user_data=st.session_state.user_data,
-                        score_percentage=f"{score_percentage}%",
-                        answers=finance_answers,
-                        ai_data=ai_insights
-                    )
-                    
-                    my_bar.progress(100, text="Report generated successfully! 🎉")
-                    time.sleep(0.5)
-                    my_bar.empty()
-                    
-                    with open(pdf_path, "rb") as pdf_file:
-                        st.download_button(
-                            label="📥 Download Your Full Report (PDF)",
-                            data=pdf_file,
-                            file_name=f"BlueRock_Finance_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
-                            mime="application/pdf",
-                            type="primary"
+                
+                # Container untuk menangkap hasil dari thread
+                ai_result = {"data": None, "done": False, "error": None}
+                
+                def fetch_ai_insights():
+                    try:
+                        ai_result["data"] = generate_ai_report_insights(
+                            answers=finance_answers,
+                            score=f"{score_percentage}%",
+                            company_name=st.session_state.user_data['company'],
+                            assessment_type=st.session_state.user_data['assessment_type']
                         )
-                except Exception as e:
+                    except Exception as e:
+                        ai_result["error"] = e
+                    finally:
+                        ai_result["done"] = True
+
+                # 1. Mulai proses AI di background thread
+                ai_thread = threading.Thread(target=fetch_ai_insights)
+                ai_thread.start()
+                
+                # 2. Loop untuk animasi progress bar selama thread berjalan
+                progress_val = 10
+                my_bar.progress(progress_val, text="Crunching financial metrics...")
+                
+                while not ai_result["done"]:
+                    if progress_val < 85:  # Mentok di 85% sambil nunggu AI selesai
+                        progress_val += 1
+                        my_bar.progress(progress_val, text=f"AI Consultant is writing deep analysis pages... ({progress_val}%)")
+                    time.sleep(0.3)  # Kecepatan majunya progress bar
+                
+                # 3. Setelah AI selesai, lanjut bikin PDF
+                if ai_result["error"]:
                     my_bar.empty()
-                    st.error(f"Failed to generate PDF. Error: {e}")
+                    st.error(f"Failed to generate AI insights. Error: {ai_result['error']}")
+                else:
+                    my_bar.progress(90, text="Compiling A4 landscape layout...")
+                    try:
+                        from pdf_generator import create_healthcheck_pdf
+                        pdf_path = create_healthcheck_pdf(
+                            user_data=st.session_state.user_data,
+                            score_percentage=f"{score_percentage}%",
+                            answers=finance_answers,
+                            ai_data=ai_result["data"]
+                        )
+                        
+                        my_bar.progress(100, text="Report generated successfully! 🎉")
+                        time.sleep(0.5)
+                        my_bar.empty()
+                        
+                        with open(pdf_path, "rb") as pdf_file:
+                            st.download_button(
+                                label="📥 Download Your Full Report (PDF)",
+                                data=pdf_file,
+                                file_name=f"BlueRock_Finance_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
+                                mime="application/pdf",
+                                type="primary"
+                            )
+                    except Exception as e:
+                        my_bar.empty()
+                        st.error(f"Failed to generate PDF. Error: {e}")
 
         except Exception as e:
             st.error(f"Cannot load Finance questions. Error: {e}")
@@ -417,41 +441,63 @@ else:
 
                     # --- ROUTE B: PROGRESS BAR & AI GENERATION ---
                     my_bar = st.progress(0, text="Preparing your custom BVA PDF Report... Please wait.")
-                    try:
-                        time.sleep(0.4)
-                        my_bar.progress(30, text="Analyzing conversational logs...")
-                        
-                        ai_insights = generate_ai_report_insights(
-                            answers=st.session_state.extracted_data,
-                            score=result['score_percentage'],
-                            company_name=st.session_state.user_data['company'],
-                            assessment_type=st.session_state.user_data['assessment_type']
-                        )
-                        
-                        my_bar.progress(70, text="AI Consultant is writing deep evaluation pages...")
-                        time.sleep(0.4)
-                        my_bar.progress(90, text="Compiling A4 landscape layout...")
-                        
-                        from pdf_generator import create_healthcheck_pdf
-                        pdf_path = create_healthcheck_pdf(
-                            user_data=st.session_state.user_data,
-                            score_percentage=result['score_percentage'],
-                            answers=st.session_state.extracted_data,
-                            ai_data=ai_insights
-                        )
-                        
-                        my_bar.progress(100, text="Report generated successfully! 🎉")
-                        time.sleep(0.5)
-                        my_bar.empty()
-                        
-                        with open(pdf_path, "rb") as pdf_file:
-                            st.download_button(
-                                label="📥 Download Your Full Report (PDF)",
-                                data=pdf_file,
-                                file_name=f"BlueRock_BVA_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
-                                mime="application/pdf",
-                                type="primary"
+                    
+                    ai_result = {"data": None, "done": False, "error": None}
+                    
+                    def fetch_ai_insights_bva():
+                        try:
+                            ai_result["data"] = generate_ai_report_insights(
+                                answers=st.session_state.extracted_data,
+                                score=result['score_percentage'],
+                                company_name=st.session_state.user_data['company'],
+                                assessment_type=st.session_state.user_data['assessment_type']
                             )
-                    except Exception as e:
+                        except Exception as e:
+                            ai_result["error"] = e
+                        finally:
+                            ai_result["done"] = True
+
+                    # 1. Mulai proses AI di background thread
+                    ai_thread = threading.Thread(target=fetch_ai_insights_bva)
+                    ai_thread.start()
+                    
+                    # 2. Animasi progress bar
+                    progress_val = 10
+                    my_bar.progress(progress_val, text="Analyzing conversational logs...")
+                    
+                    while not ai_result["done"]:
+                        if progress_val < 85:
+                            progress_val += 1
+                            my_bar.progress(progress_val, text=f"AI Consultant is writing deep evaluation pages... ({progress_val}%)")
+                        time.sleep(0.3)
+                    
+                    # 3. Selesaikan PDF
+                    if ai_result["error"]:
                         my_bar.empty()
-                        st.error(f"Failed to generate PDF. Error: {e}")
+                        st.error(f"Failed to generate AI insights. Error: {ai_result['error']}")
+                    else:
+                        my_bar.progress(90, text="Compiling A4 landscape layout...")
+                        try:
+                            from pdf_generator import create_healthcheck_pdf
+                            pdf_path = create_healthcheck_pdf(
+                                user_data=st.session_state.user_data,
+                                score_percentage=result['score_percentage'],
+                                answers=st.session_state.extracted_data,
+                                ai_data=ai_result["data"]
+                            )
+                            
+                            my_bar.progress(100, text="Report generated successfully! 🎉")
+                            time.sleep(0.5)
+                            my_bar.empty()
+                            
+                            with open(pdf_path, "rb") as pdf_file:
+                                st.download_button(
+                                    label="📥 Download Your Full Report (PDF)",
+                                    data=pdf_file,
+                                    file_name=f"BlueRock_BVA_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
+                                    mime="application/pdf",
+                                    type="primary"
+                                )
+                        except Exception as e:
+                            my_bar.empty()
+                            st.error(f"Failed to generate PDF. Error: {e}")
