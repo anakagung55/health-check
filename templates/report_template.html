@@ -2,218 +2,196 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=1920">
-<title>Diagnostic Report - {{ client_name }} | BlueRock</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<title>Diagnostic Report - {{ client_name }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-/* --- MAGIC FIX UNTUK WEASYPRINT --- */
+/* --- SETUP KERTAS A4 LANDSCAPE --- */
 @page {
-    size: 1920px 1080px;
+    size: A4 landscape;
     margin: 0;
 }
-/* ---------------------------------- */
 
 :root {
   --blue:     #0027E3;
   --aqua:     #00FFCC;
-  --purple:   #7000FF;
-  --magenta:  #F605FE;
-  --mint:     #CCFFEA;
-  --softblue: #D5E8FF;
-  --lavender: #E3CAFF;
-  --pink:     #FDCBFF;
-  --navy:    #06103A;
-  --ink:     #141C3A;
-  --slate:   #3D4A6B;
-  --muted:   #7A849E;
-  --border:  #E4E9F5;
-  --surface: #F7F9FE;
-  --white:   #FFFFFF;
-
-  --r-sm:  8px;
-  --r-md:  12px;
-  --r-lg:  16px;
-  --r-xl:  22px;
-
+  --navy:     #06103A;
+  --slate:    #3D4A6B;
+  --muted:    #7A849E;
+  --border:   #E4E9F5;
+  --surface:  #F7F9FE;
+  --white:    #FFFFFF;
   --font-body:    'Noto Sans', sans-serif;
   --font-display: 'Noto Serif', serif;
-
-  --page-w: 1920px;
-  --page-h: 1080px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: var(--font-body);
-  background: var(--white);
-  color: var(--ink);
+  background: #f0f0f0;
+  color: var(--navy);
   font-size: 14px;
-  line-height: 1.55;
-  -webkit-font-smoothing: antialiased;
 }
 
+/* --- KONFIGURASI HALAMAN --- */
 .page {
-  width: var(--page-w);
-  height: var(--page-h);
+  width: 297mm;
+  height: 210mm;
   background: var(--white);
   position: relative;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   page-break-after: always;
+  overflow: hidden;
 }
 
+/* Garis Aksen Kiri */
 .page::before {
   content: '';
   position: absolute;
   left: 0; top: 0; bottom: 0;
-  width: 5px;
-  background: linear-gradient(180deg, var(--blue) 0%, var(--purple) 55%, var(--magenta) 100%);
-  z-index: 10;
+  width: 8px;
+  background: var(--blue);
 }
 
-.ph {
+/* --- HEADER & FOOTER --- */
+.header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 0 52px 0 56px;
-  height: 62px;
-  border-bottom: 1.5px solid var(--border);
-  flex-shrink: 0;
-  background: var(--white);
+  align-items: center;
+  padding: 20px 40px 20px 48px;
+  border-bottom: 2px solid var(--border);
 }
-.ph-brand { display: flex; align-items: center; gap: 12px; }
-.ph-logo { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13px; color: var(--blue); }
-.ph-logo-mark { width: 28px; height: 28px; background: var(--blue); border-radius: 7px; display: grid; place-items: center; }
-.ph-logo-mark span { color: var(--white); font-size: 11px; font-weight: 800; }
-.ph-sep { width: 1px; height: 20px; background: var(--border); }
-.ph-client { font-size: 12.5px; color: var(--muted); }
-.ph-client strong { color: var(--ink); font-weight: 600; }
-.ph-right { display: flex; align-items: center; gap: 20px; }
-.ph-domain { font-size: 11.5px; color: var(--blue); font-weight: 500; background: var(--softblue); padding: 4px 12px; border-radius: 20px; }
-.ph-date { font-size: 11px; color: var(--muted); }
+.logo-area { display: flex; align-items: center; gap: 12px; font-weight: 700; color: var(--blue); font-size: 16px; }
+.logo-box { background: var(--blue); color: var(--white); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 14px; font-weight: bold; }
+.report-title { color: var(--muted); font-size: 14px; font-weight: 600; }
 
-.roadmap-nav { display: flex; align-items: stretch; padding: 0 56px; height: 50px; background: var(--surface); border-bottom: 1.5px solid var(--border); flex-shrink: 0; }
-.rn-item { display: flex; align-items: center; gap: 9px; padding: 0 22px; font-size: 12px; font-weight: 600; }
-.rn-item + .rn-item { border-left: 1px solid var(--border); }
-.rn-num { font-size: 9.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .65; }
-.rn-item.active { background: var(--blue); color: var(--white); }
-.rn-item.active .rn-num { color: var(--aqua); }
-.rn-item.locked { color: var(--muted); }
+.footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 40px 15px 48px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted);
+}
 
-.pb { flex: 1; padding: 32px 52px 24px 56px; display: flex; flex-direction: column; min-height: 0; }
-.pf { display: flex; align-items: center; justify-content: space-between; padding: 0 52px 0 56px; height: 44px; border-top: 1.5px solid var(--border); flex-shrink: 0; background: var(--white); }
-.pf-note { font-size: 10.5px; color: var(--muted); }
-.pf-brand { font-size: 10.5px; font-weight: 700; color: var(--blue); }
+/* --- KONTEN HALAMAN --- */
+.content {
+  padding: 40px 40px 40px 48px;
+  display: flex;
+  gap: 40px;
+  flex: 1;
+}
 
-.display-xl { font-family: var(--font-display); font-size: 56px; font-weight: 700; color: var(--navy); line-height: 1.06; }
-.display-xl em { font-style: italic; color: var(--blue); }
-.display-lg { font-family: var(--font-display); font-size: 30px; font-weight: 700; color: var(--navy); line-height: 1.1; }
+.col-left { flex: 1; display: flex; flex-direction: column; }
+.col-right { flex: 1.2; display: flex; flex-direction: column; gap: 20px; }
 
-.section-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--blue); display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.section-eyebrow::before { content: ''; display: block; width: 20px; height: 2px; background: var(--magenta); }
-.section-sub { font-size: 13px; color: var(--muted); max-width: 620px; margin-bottom: 20px; }
+h1 { font-family: var(--font-display); font-size: 42px; line-height: 1.1; color: var(--navy); margin-bottom: 20px; }
+h1 em { color: var(--blue); font-style: italic; }
+h2 { font-family: var(--font-display); font-size: 32px; color: var(--navy); margin-bottom: 10px; border-bottom: 3px solid var(--aqua); padding-bottom: 10px; display: inline-block; }
 
-.badge { display: inline-flex; padding: 3px 10px; border-radius: 20px; font-size: 10.5px; font-weight: 700; }
-.b-high { background: #FFE8EA; color: #C0001A; }
-.b-med { background: #FFF3CD; color: #92600A; }
-.b-low { background: var(--mint); color: #0A7A50; }
-.b-good { background: var(--softblue); color: var(--blue); }
+.intro { font-size: 15px; color: var(--slate); line-height: 1.6; }
 
-.cards-grid { display: grid; gap: 14px; }
-.cards-grid-2 { grid-template-columns: 1fr 1fr; }
+/* --- SCORE BOX --- */
+.score-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--blue);
+  padding: 25px;
+  border-radius: 12px;
+  margin-top: 30px;
+}
+.score-header { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: bold; text-transform: uppercase; color: var(--muted); }
+.score-value { font-size: 48px; font-weight: 900; color: var(--navy); margin: 10px 0; }
+.score-label { font-size: 18px; font-weight: bold; color: var(--blue); }
 
-.finding-card { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--r-lg); padding: 20px 22px; display: flex; flex-direction: column; gap: 10px; position: relative; }
-.finding-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: var(--r-lg) var(--r-lg) 0 0; }
-.finding-card.sev-high::before { background: #E8405A; }
-.finding-card.sev-medium::before { background: #F0A020; }
-.finding-card.sev-low::before { background: #22C57A; }
+/* --- KARTU DETAIL (HALAMAN PILAR) --- */
+.cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+.card {
+  border: 1px solid var(--border);
+  padding: 20px;
+  border-radius: 10px;
+  border-top: 4px solid var(--slate);
+  background: #fafafa;
+}
+.card.high { border-top-color: #0027E3; background: #F5F9FF;}
+.card.med { border-top-color: #F0A020; }
+.card.low { border-top-color: #E8405A; background: #FFF5F7;}
 
-.fc-category { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
-.fc-title { font-size: 14px; font-weight: 700; color: var(--navy); }
-.fc-finding { font-size: 12px; color: var(--slate); border-left: 2px solid var(--border); padding-left: 10px; }
-.fc-impact { padding: 10px; font-size: 11px; border-radius: 0 4px 4px 0; border-left: 3px solid; background: #f8fafc; border-left-color: #64748b;}
-.fc-impact strong { display: block; font-weight: 800; margin-bottom: 4px; }
-.fc-rec { font-size: 12px; color: var(--ink); display: flex; gap: 7px; }
-
-.snap-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-.snap-card { border: 1.5px solid var(--border); border-radius: var(--r-md); padding: 14px 16px; border-top: 3px solid #F0A020; }
-.snap-label { font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
-.snap-title { font-size: 14px; font-weight: 700; color: var(--navy); margin: 4px 0 8px; }
-
-.intro-text { margin-top:16px; font-size:11.5px; color:var(--slate); padding-right: 20px; }
-.ranking-box { margin-top: 24px; border: 1px solid var(--border); border-radius: var(--r-md); }
-.ranking-header { background: var(--surface); padding: 10px 14px; font-size: 11px; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid var(--border); }
-.ranking-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-.ranking-table th { padding: 8px 14px; text-align: left; color: var(--muted); font-size: 9.5px; border-bottom: 1px solid var(--border); }
-.ranking-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
-
-.row { display: flex; gap: 20px; }
-.col { display: flex; flex-direction: column; gap: 14px; }
-.f1 { flex: 1; } .f2 { flex: 2; } .f3 { flex: 3; }
+.c-title { font-size: 16px; font-weight: bold; color: var(--navy); margin-bottom: 8px; }
+.c-desc { font-size: 13px; color: var(--slate); line-height: 1.5; }
+.c-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-top: 15px; background: var(--white); border: 1px solid var(--border); }
 </style>
 </head>
 <body>
 
 <div class="page">
-  <div class="ph">
-    <div class="ph-brand"><div class="ph-logo"><div class="ph-logo-mark"><span>BR</span></div>BlueRock</div><div class="ph-sep"></div><div class="ph-client">Business Health Check - <strong>{{ client_name }}</strong></div></div>
-    <div class="ph-right"><span class="ph-domain">{{ client_url }}</span><span class="ph-date">{{ report_date }}</span></div>
+  <div class="header">
+    <div class="logo-area"><div class="logo-box">BR</div>BlueRock Advisory</div>
+    <div class="report-title">Business Health Check - {{ client_name }}</div>
   </div>
-
-  <div class="roadmap-nav">
-    <div class="rn-item active"><div class="rn-num">Pillar 1</div><div class="rn-label">Financial Performance</div></div>
-    <div class="rn-item locked"><div class="rn-num">Pillar 2</div><div class="rn-label">Strategic Direction</div></div>
-    <div class="rn-item locked"><div class="rn-num">Pillar 3</div><div class="rn-label">Operations & Scale</div></div>
-  </div>
-
-  <div class="pb" style="flex-direction:row; gap:44px;">
-    <div class="col f2">
-      <div class="section-eyebrow">BlueRock Advisory</div>
-      <h1 class="display-xl">Diagnostic<br>Assessment<br><em>Report</em></h1>
-      
-      <div class="intro-text">
-        <p><strong>A strong business relies on a solid foundation.</strong></p>
-        <p>This report reviews your operational and financial health against industry benchmarks. It highlights immediate risks and uncovers opportunities to increase the underlying value of your enterprise.</p>
+  
+  <div class="content">
+    <div class="col-left">
+      <h1>Executive<br><em>Summary</em></h1>
+      <div class="intro">
+        <p><strong>A strong business relies on a solid foundation.</strong></p><br>
+        <p>This report reviews your operational and financial health based on your recent assessment. It highlights areas of strength and uncovers specific opportunities to increase the underlying value and resilience of your enterprise.</p>
       </div>
 
-      <div class="ranking-box">
-          <div class="ranking-header">Key Business Focus Areas</div>
-          <table class="ranking-table">
-              <tr><th>Focus Area</th><th>Current Status</th></tr>
-              {% for item in google_rankings %}
-              <tr><td><strong>{{ item.keyword }}</strong></td><td>{{ item.rank }}</td></tr>
-              {% endfor %}
-          </table>
+      <div class="score-box">
+        <div class="score-header"><span>Overall Readiness Score</span><span>{{ date }}</span></div>
+        <div class="score-value">{{ final_score }}</div>
+        <div class="score-label">{{ band }}</div>
       </div>
     </div>
 
-    <div class="col f3">
-      <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:12px;">Executive Snapshot</div>
-      <div class="snap-grid">
-        <div class="snap-card"><div class="snap-label">Finance</div><div class="snap-title">Cashflow & Reporting</div><span class="badge b-med">Needs Review</span></div>
-        <div class="snap-card"><div class="snap-label">Operations</div><div class="snap-title">Systems & Tech</div><span class="badge b-high">Critical</span></div>
-        <div class="snap-card"><div class="snap-label">Risk</div><div class="snap-title">Key Person Dependency</div><span class="badge b-high">Critical</span></div>
-      </div>
-      
-      <div style="margin-top:16px; padding:16px; background:#F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid var(--blue);">
-          <div style="display: flex; justify-content: space-between;">
-              <span style="font-weight:800;">Overall Health Score</span>
-              <span style="font-size:20px; font-weight:900;">{{ audit_score }}/10</span>
-          </div>
-          <div style="font-weight: 700; color: var(--navy); margin: 8px 0;">{{ score_label }}</div>
-          <div style="font-size:12.5px;">{{ monetization_text }}</div>
-      </div>
+    <div class="col-right" style="justify-content: center;">
+       <h3 style="color: var(--muted); text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Key Focus Areas</h3>
+       {% for highlight in highlights %}
+       <div style="background: white; border: 1px solid var(--border); padding: 15px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+         <span style="font-weight: bold; font-size: 15px;">{{ highlight.title }}</span>
+         <span style="font-size: 13px; color: var(--blue); font-weight: bold; background: var(--surface); padding: 5px 12px; border-radius: 15px;">{{ highlight.status }}</span>
+       </div>
+       {% endfor %}
     </div>
   </div>
-
-  <div class="pf">
-    <span class="pf-brand">BlueRock</span>
-    <span class="pf-note">Confidential Assessment Report.</span>
-    <span class="pf-pg">Page 1 of 1</span>
+  
+  <div class="footer">
+    <span>Confidential & Proprietary</span>
+    <span>Page 1</span>
   </div>
 </div>
+
+{% for pillar in pillars %}
+<div class="page">
+  <div class="header">
+    <div class="logo-area"><div class="logo-box">BR</div>BlueRock Advisory</div>
+    <div class="report-title">Detailed Analysis</div>
+  </div>
+  
+  <div class="content" style="flex-direction: column;">
+    <h2>{{ pillar.name }}</h2>
+    <p class="intro">{{ pillar.description }}</p>
+    
+    <div class="cards-grid">
+      {% for item in pillar.items %}
+      <div class="card {{ item.color_class }}">
+        <div class="c-title">{{ item.question }}</div>
+        <div class="c-desc">{{ item.insight }}</div>
+        <div class="c-badge">{{ item.score_text }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  
+  <div class="footer">
+    <span>Confidential & Proprietary</span>
+    <span>Page {{ loop.index + 1 }}</span>
+  </div>
+</div>
+{% endfor %}
 
 </body>
 </html>
