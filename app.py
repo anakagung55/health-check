@@ -3,70 +3,101 @@ import os
 import pandas as pd
 import google.generativeai as genai
 import json
+import time
 from datetime import datetime
 from dotenv import load_dotenv
-
 
 # Load konfigurasi environment
 load_dotenv()
 
 def generate_ai_report_insights(answers, score, company_name, assessment_type):
-    """Melempar data ke Gemini untuk meracik isi laporan PDF"""
+    """Melempar data ke Gemini untuk meracik isi laporan PDF kelas atas"""
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
     
     system_prompt = f"""
-    You are a Senior Business Consultant at BlueRock Advisory.
-    You need to write a highly professional, dense, and actionable diagnostic report for a client named '{company_name}'.
-    They just completed the '{assessment_type}' and scored {score}.
+    You are a Senior Partner at a top-tier management consulting firm (like McKinsey or BlueRock Advisory) advising a client named '{company_name}'.
+    They just completed the '{assessment_type}' and achieved a score of {score}.
     
-    Here is their raw assessment data (1-5 scale or A-D spectrum):
+    Here is their raw assessment data (answers to diagnostic questions):
     {answers}
     
-    Based on their answers, generate a detailed report content in strict JSON format. 
-    The JSON must match this exact structure:
+    Based on these specific answers, perform a deep diagnostic analysis and generate the report content in STRICT, valid JSON format.
+    
+    The JSON MUST exactly match this structure and keys:
     {{
         "executive_summary_paragraphs": [
-            "Paragraph 1: High-level observation of their score and overall health.",
-            "Paragraph 2: The most critical risk or weakness discovered.",
-            "Paragraph 3: The immediate opportunity or next step they should take."
+            "Paragraph 1: Executive overview of their score, what it means, and their overall business posture.",
+            "Paragraph 2: The most critical systemic risk, bottleneck, or weakness identified from their low scores.",
+            "Paragraph 3: The immediate strategic mandate or primary opportunity they must act on."
         ],
         "highlights": [
-            {{"title": "Biggest Strength", "status": "Optimized"}},
-            {{"title": "Core Weakness", "status": "Critical Risk"}},
-            {{"title": "Key Opportunity", "status": "Growth Potential"}}
+            {{"title": "Name of Biggest Strength", "status": "Optimized"}},
+            {{"title": "Name of Core Weakness", "status": "Critical Risk"}},
+            {{"title": "Name of Key Opportunity", "status": "Growth Potential"}}
         ],
         "pillars": [
             {{
-                "name": "Area requiring immediate attention based on their lowest scores",
-                "description": "A 2-sentence professional explanation of why this area matters.",
+                "name": "Operational Risks & Bottlenecks",
+                "description": "A dense 2-sentence professional explanation of why resolving these specific bottlenecks is critical for their business value.",
+                "bottom_line": "A powerful concluding paragraph (3-4 sentences) summarizing the ultimate strategic action they must take in this area to mitigate risks.",
                 "details": [
-                    {{"question": "Specific Issue 1", "insight": "Deep 3-sentence consulting insight on how to fix this.", "score_text": "Low Score", "color_class": "low"}},
-                    {{"question": "Specific Issue 2", "insight": "Deep 3-sentence consulting insight on how to fix this.", "score_text": "Low Score", "color_class": "low"}}
+                    {{
+                        "question": "Name of the specific weak area/metric based on data",
+                        "observation": "What the specific data/answer tells us about their current state (2 sentences).",
+                        "recommendation": "Highly actionable, tactical step to fix or improve this (2 sentences).",
+                        "score_text": "Action Required",
+                        "impact_level": "High",
+                        "color_class": "low"
+                    }},
+                    {{
+                        "question": "Name of another specific weak area",
+                        "observation": "Observation based on data (2 sentences).",
+                        "recommendation": "Tactical recommendation (2 sentences).",
+                        "score_text": "Review Needed",
+                        "impact_level": "Medium",
+                        "color_class": "low"
+                    }}
                 ]
             }},
             {{
-                "name": "Area of existing strength based on their highest scores",
-                "description": "A 2-sentence professional explanation of how to leverage this.",
+                "name": "Strategic Growth Capabilities",
+                "description": "A dense 2-sentence explanation of how they can leverage their existing strengths to scale.",
+                "bottom_line": "A powerful concluding paragraph (3-4 sentences) on how to capitalize on these strengths for market advantage.",
                 "details": [
-                    {{"question": "Strong Capability 1", "insight": "Deep 3-sentence consulting insight on maintaining this.", "score_text": "High Score", "color_class": "high"}}
+                    {{
+                        "question": "Name of their strongest area/metric",
+                        "observation": "What their high score indicates about their capability (2 sentences).",
+                        "recommendation": "Strategic advice on how to scale or protect this capability (2 sentences).",
+                        "score_text": "Strong",
+                        "impact_level": "High",
+                        "color_class": "high"
+                    }}
                 ]
             }}
         ]
     }}
     
-    IMPORTANT: Make the "insight" text dense, realistic, and actionable. Avoid fluff. Write like a Big 4 consultant.
-    Do NOT include markdown like ```json. Return ONLY the JSON object.
+    CRITICAL INSTRUCTIONS:
+    1. Be highly specific to the data provided. Do not use generic filler.
+    2. Use dense, authoritative, and realistic consulting language (e.g., 'capitalize on operational leverage', 'mitigate key-person dependency').
+    3. "color_class" must ONLY be 'low' (for weaknesses/risks), 'med' (for average areas), or 'high' (for strengths).
+    4. Return ONLY valid JSON.
     """
     
     try:
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        # MAGIC TRICK: Memaksa Gemini 100% selalu mengeluarkan JSON murni tanpa markdown
+        model = genai.GenerativeModel(
+            model_name='gemini-2.5-flash',
+            generation_config={"response_mime_type": "application/json"}
+        )
         response = model.generate_content(system_prompt)
         
         raw_text = response.text.replace("```json", "").replace("```", "").strip()
         return json.loads(raw_text)
     except Exception as e:
         print(f"Gemini Analysis Error: {e}")
-        return None # Akan fallback ke data dummy jika gagal
+        return None
+
 # --- KONFIGURASI HALAMAN ---
 st.set_page_config(
     page_title=f"{os.getenv('CLIENT_NAME', 'BlueRock')} Health Check", 
@@ -166,10 +197,8 @@ else:
                 
                 submit_finance = st.form_submit_button("Submit Assessment 🚀", type="primary")
                 
-            # --- OUTSIDE THE FORM BLOCK ---
-            # Logika ini sekarang sejajar dengan "with st.form", bukan di dalamnya
             if submit_finance:
-                with st.spinner("Saving your responses & Generating Report..."):
+                with st.spinner("Saving your responses to database..."):
                     from streamlit_gsheets import GSheetsConnection
                     
                     total_score = sum(finance_answers.values())
@@ -179,7 +208,6 @@ else:
                     try:
                         conn = st.connection("gsheets", type=GSheetsConnection)
                         sheet_url = os.getenv("GSHEET_URL")
-                        
                         existing_data = conn.read(spreadsheet=sheet_url, usecols=list(range(10)), ttl=0).dropna(how="all")
                         
                         new_row_values = [
@@ -197,32 +225,54 @@ else:
                         
                         new_data_df = pd.DataFrame([new_row_values], columns=existing_data.columns)
                         updated_data = pd.concat([existing_data, new_data_df], ignore_index=True)
-                        
                         conn.update(spreadsheet=sheet_url, data=updated_data)
                         st.success(f"✅ Assessment submitted successfully! Your preliminary score is {score_percentage}%.")
                     except Exception as e:
                         st.error(f"Failed to save data. Error: {e}")
 
-                    # --- GENERATE PDF ---
+                # --- ROUTE A: PROGRESS BAR & AI GENERATION ---
+                my_bar = st.progress(0, text="Preparing your custom Finance PDF Report... Please wait.")
+                try:
+                    time.sleep(0.4)
+                    my_bar.progress(30, text="Crunching financial metrics...")
+                    
+                    ai_insights = generate_ai_report_insights(
+                        answers=finance_answers,
+                        score=f"{score_percentage}%",
+                        company_name=st.session_state.user_data['company'],
+                        assessment_type=st.session_state.user_data['assessment_type']
+                    )
+                    
+                    my_bar.progress(70, text="AI Consultant is writing deep analysis pages...")
+                    time.sleep(0.4)
+                    my_bar.progress(90, text="Compiling A4 landscape layout...")
+                    
                     from pdf_generator import create_healthcheck_pdf
-                    try:
-                        pdf_path = create_healthcheck_pdf(
-                            user_data=st.session_state.user_data,
-                            score_percentage=f"{score_percentage}%",
-                            answers=finance_answers
+                    pdf_path = create_healthcheck_pdf(
+                        user_data=st.session_state.user_data,
+                        score_percentage=f"{score_percentage}%",
+                        answers=finance_answers,
+                        ai_data=ai_insights
+                    )
+                    
+                    my_bar.progress(100, text="Report generated successfully! 🎉")
+                    time.sleep(0.5)
+                    my_bar.empty()
+                    
+                    with open(pdf_path, "rb") as pdf_file:
+                        st.download_button(
+                            label="📥 Download Your Full Report (PDF)",
+                            data=pdf_file,
+                            file_name=f"BlueRock_Finance_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
+                            mime="application/pdf",
+                            type="primary"
                         )
-                        with open(pdf_path, "rb") as pdf_file:
-                            st.download_button(
-                                label="📥 Download Your Full Report (PDF)",
-                                data=pdf_file,
-                                file_name=f"BlueRock_Finance_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
-                                mime="application/pdf"
-                            )
-                    except Exception as e:
-                        st.error(f"Failed to generate PDF. Error: {e}")
+                except Exception as e:
+                    my_bar.empty()
+                    st.error(f"Failed to generate PDF. Error: {e}")
 
         except Exception as e:
-            st.error(f"Cannot load Finance questions. Please ensure data/finance_questions.csv exists. Error: {e}")
+            st.error(f"Cannot load Finance questions. Error: {e}")
             
         if st.button("Reset Form"):
             st.session_state.clear()
@@ -232,14 +282,10 @@ else:
     # ROUTE B: BVA (AI CONVERSATIONAL INTERVIEW)
     # ==========================================
     else:
-        import google.generativeai as genai
-        import json
         from scoring_config import load_bva_logic
         
         bva_logic = load_bva_logic()
         question_bank = "\n".join([f"{q_id}: {data['text']}" for q_id, data in list(bva_logic['question_weights'].items())])
-        
-        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
         
         system_instruction = f"""
         You are a professional Business Consultant from BlueRock.
@@ -264,9 +310,6 @@ else:
           'B' = Good / Mostly / Above average
           'C' = Fair / Somewhat / Below average
           'D' = Weakest / Poor / Negative / None
-        - Only extract the answer AFTER you have asked the question.
-        - If they haven't answered a specific question yet, leave it out.
-        - Keep accumulating the answers as the chat progresses (e.g., if you have Q1 and Q2, output both).
         """
         
         model = genai.GenerativeModel(
@@ -303,22 +346,15 @@ else:
                     chat = model.start_chat(history=gemini_history[:-1]) 
                     response = chat.send_message(user_input)
                     
-                    # --- PERBAIKAN JSON PARSER (ANTI-CRASH) ---
                     raw_text = response.text
                     raw_text = raw_text.replace("```json", "").replace("```", "").strip()
-                    
-                    if not raw_text:
-                        raise ValueError("Empty response from AI (possibly blocked by safety filters).")
-                        
                     response_data = json.loads(raw_text)
-                    # ------------------------------------------
                     
                     agent_reply = response_data.get("agent_reply", "")
                     next_question = response_data.get("next_question", "")
                     extracted = response_data.get("extracted_answers", {})
                     
                     full_bot_response = f"{agent_reply}\n\n**{next_question}**"
-                    
                     st.chat_message("assistant").markdown(full_bot_response)
                     st.session_state.messages.append({"role": "assistant", "content": full_bot_response})
                     
@@ -327,7 +363,7 @@ else:
                     st.rerun() 
                     
                 except Exception as e:
-                    st.error(f"Failed to process AI response. Please try answering again. (Log: {e})")
+                    st.error(f"Failed to process AI response. (Log: {e})")
 
         st.markdown("---")
         col1, col2 = st.columns(2)
@@ -352,7 +388,6 @@ else:
                         try:
                             conn = st.connection("gsheets", type=GSheetsConnection)
                             sheet_url = os.getenv("GSHEET_URL")
-                            
                             existing_data = conn.read(spreadsheet=sheet_url, usecols=list(range(10)), ttl=0).dropna(how="all")
                             
                             new_row_values = [
@@ -370,7 +405,6 @@ else:
                             
                             new_data_df = pd.DataFrame([new_row_values], columns=existing_data.columns)
                             updated_data = pd.concat([existing_data, new_data_df], ignore_index=True)
-                            
                             conn.update(spreadsheet=sheet_url, data=updated_data)
                             
                         except Exception as e:
@@ -380,55 +414,41 @@ else:
                         st.subheader("🎯 Your Assessment Results")
                         st.metric(label="Overall Business Health Score", value=f"{result['score_percentage']}%")
                         st.markdown(f"### Classification: :{result['color']}[**{result['band']}**]")
-                        
-                        with st.expander("View Technical Breakdown"):
-                            st.json(result['details'])
-                            st.write("Raw Extracted Answers:", st.session_state.extracted_data)
-                    # --- GENERATE PDF DENGAN PROGRESS BAR ---
-                    import time
-                    from pdf_generator import create_healthcheck_pdf
-                    
-                    st.markdown("---")
-                    progress_text = "Preparing your custom PDF Report... Please wait."
-                    my_bar = st.progress(0, text=progress_text)
-                    
+
+                    # --- ROUTE B: PROGRESS BAR & AI GENERATION ---
+                    my_bar = st.progress(0, text="Preparing your custom BVA PDF Report... Please wait.")
                     try:
-                        # Simulasi proses loading agar user tahu sistem sedang bekerja
-                        time.sleep(0.5)
-                        my_bar.progress(30, text="Analyzing assessment data...")
-                        time.sleep(0.5)
-                        my_bar.progress(50, text="AI Consultant is writing your personalized insights...")
+                        time.sleep(0.4)
+                        my_bar.progress(30, text="Analyzing conversational logs...")
                         
                         ai_insights = generate_ai_report_insights(
-                            answers=st.session_state.extracted_data, # Atau st.session_state.extracted_data untuk Route B
+                            answers=st.session_state.extracted_data,
                             score=result['score_percentage'],
                             company_name=st.session_state.user_data['company'],
                             assessment_type=st.session_state.user_data['assessment_type']
                         )
                         
-                        time.sleep(0.5)
-                        my_bar.progress(75, text="Rendering A4 slide deck visuals...")
-                        time.sleep(1)
-                        my_bar.progress(60, text="Rendering PDF visuals & layout...")
+                        my_bar.progress(70, text="AI Consultant is writing deep evaluation pages...")
+                        time.sleep(0.4)
+                        my_bar.progress(90, text="Compiling A4 landscape layout...")
                         
-                        # Proses aslinya berjalan di sini
+                        from pdf_generator import create_healthcheck_pdf
                         pdf_path = create_healthcheck_pdf(
                             user_data=st.session_state.user_data,
-                            score_percentage=result['score_percentage'], # Untuk Route B, ubah score_percentage jadi result['score_percentage']
-                            answers=st.session_state.extracted_data, # Untuk Route B, ubah finance_answers jadi st.session_state.extracted_data
+                            score_percentage=result['score_percentage'],
+                            answers=st.session_state.extracted_data,
                             ai_data=ai_insights
                         )
                         
                         my_bar.progress(100, text="Report generated successfully! 🎉")
                         time.sleep(0.5)
-                        my_bar.empty() # Sembunyikan progress bar setelah selesai
+                        my_bar.empty()
                         
-                        # Munculkan tombol download
                         with open(pdf_path, "rb") as pdf_file:
                             st.download_button(
                                 label="📥 Download Your Full Report (PDF)",
                                 data=pdf_file,
-                                file_name=f"BlueRock_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
+                                file_name=f"BlueRock_BVA_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
                                 mime="application/pdf",
                                 type="primary"
                             )
