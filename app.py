@@ -86,7 +86,6 @@ def generate_ai_report_insights(answers, score, company_name, assessment_type):
     """
     
     try:
-        # MAGIC TRICK: Memaksa Gemini 100% selalu mengeluarkan JSON murni tanpa markdown
         model = genai.GenerativeModel(
             model_name='gemini-2.5-flash',
             generation_config={"response_mime_type": "application/json"}
@@ -111,6 +110,10 @@ if "assessment_started" not in st.session_state:
     st.session_state.assessment_started = False
 if "user_data" not in st.session_state:
     st.session_state.user_data = {}
+if "bva_pdf_path" not in st.session_state:
+    st.session_state.bva_pdf_path = None
+if "bva_result_data" not in st.session_state:
+    st.session_state.bva_result_data = None
 
 # --- HEADER APLIKASI ---
 st.title(f"🏢 {os.getenv('CLIENT_NAME', 'BlueRock')} Diagnostic")
@@ -183,7 +186,6 @@ else:
             
             with st.form("finance_generic_form"):
                 finance_answers = {}
-                
                 for index, row in finance_df.iterrows():
                     st.markdown(f"**{row['QID']} ({row['Quadrant']}):** {row['Question']}")
                     answer = st.radio(
@@ -234,10 +236,7 @@ else:
                 # --- ROUTE A: PROGRESS BAR & AI GENERATION ---
                 my_bar = st.progress(0, text="Preparing your custom Finance PDF Report... Please wait.")
                 
-                # Container untuk menangkap hasil dari thread
                 ai_result = {"data": None, "done": False, "error": None}
-                
-                # EKSTRAK DATA KE VARIABEL LOKAL DULU DI SINI
                 current_company = st.session_state.user_data['company']
                 current_assessment = st.session_state.user_data['assessment_type']
                 
@@ -246,29 +245,26 @@ else:
                         ai_result["data"] = generate_ai_report_insights(
                             answers=finance_answers,
                             score=f"{score_percentage}%",
-                            company_name=current_company,      # Pakai variabel lokal
-                            assessment_type=current_assessment # Pakai variabel lokal
+                            company_name=current_company,
+                            assessment_type=current_assessment
                         )
                     except Exception as e:
                         ai_result["error"] = e
                     finally:
                         ai_result["done"] = True
 
-                # 1. Mulai proses AI di background thread
                 ai_thread = threading.Thread(target=fetch_ai_insights)
                 ai_thread.start()
                 
-                # 2. Loop untuk animasi progress bar selama thread berjalan
                 progress_val = 10
                 my_bar.progress(progress_val, text="Crunching financial metrics...")
                 
                 while not ai_result["done"]:
-                    if progress_val < 85:  # Mentok di 85% sambil nunggu AI selesai
+                    if progress_val < 85: 
                         progress_val += 1
                         my_bar.progress(progress_val, text=f"AI Consultant is writing deep analysis pages... ({progress_val}%)")
-                    time.sleep(0.3)  # Kecepatan majunya progress bar
+                    time.sleep(0.3) 
                 
-                # 3. Setelah AI selesai, lanjut bikin PDF
                 if ai_result["error"]:
                     my_bar.empty()
                     st.error(f"Failed to generate AI insights. Error: {ai_result['error']}")
@@ -283,7 +279,7 @@ else:
                             ai_data=ai_result["data"]
                         )
                         
-                        my_bar.progress(100, text="Report generated successfully! 🎉")
+                        my_bar.progress(100, text="Report generated successfully!")
                         time.sleep(0.5)
                         my_bar.empty()
                         
@@ -293,7 +289,8 @@ else:
                                 data=pdf_file,
                                 file_name=f"BlueRock_Finance_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
                                 mime="application/pdf",
-                                type="primary"
+                                type="primary",
+                                key="btn_dl_finance" # KUNCI PENTING MENCEGAH ERROR
                             )
                     except Exception as e:
                         my_bar.empty()
@@ -311,7 +308,6 @@ else:
     # ==========================================
     else:
         from scoring_config import load_bva_logic
-        
         bva_logic = load_bva_logic()
         question_bank = "\n".join([f"{q_id}: {data['text']}" for q_id, data in list(bva_logic['question_weights'].items())])
         
@@ -374,8 +370,7 @@ else:
                     chat = model.start_chat(history=gemini_history[:-1]) 
                     response = chat.send_message(user_input)
                     
-                    raw_text = response.text
-                    raw_text = raw_text.replace("```json", "").replace("```", "").strip()
+                    raw_text = response.text.replace("```json", "").replace("```", "").strip()
                     response_data = json.loads(raw_text)
                     
                     agent_reply = response_data.get("agent_reply", "")
@@ -395,17 +390,18 @@ else:
 
         st.markdown("---")
         
-        # Pisahkan definisi kolom hanya untuk penempatan tombol
+        # Pisahkan definisi kolom untuk tombol
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Reset Form & Chat", use_container_width=True):
                 st.session_state.clear()
                 st.rerun()
         with col2:
-            # Simpan state tombol ke dalam variabel finish_clicked
-            finish_clicked = st.button("Finish & Calculate Score 📊", type="primary", use_container_width=True)
+            # Cegah pencet berkali-kali kalau PDF udah jadi
+            btn_disabled = st.session_state.bva_pdf_path is not None
+            finish_clicked = st.button("Finish & Calculate Score 📊", type="primary", use_container_width=True, disabled=btn_disabled)
             
-        # Pindahkan SEMUA logic hasil dan loading KELUAR dari blok with col2:
+        # LOGIC PENGHITUNGAN (HANYA JALAN SEKALI SAAT DICLICK)
         if finish_clicked:
             from scoring_engine import calculate_bva_score 
             from streamlit_gsheets import GSheetsConnection
@@ -413,12 +409,14 @@ else:
             if not st.session_state.extracted_data:
                 st.warning("No data extracted yet. Please answer a few questions first!")
             else:
-                st.markdown("---")
                 with st.spinner("Calculating your BVA Score & Saving Data..."):
                     result = calculate_bva_score(
                         extracted_answers=st.session_state.extracted_data,
                         user_goal=st.session_state.user_data['bva_goal']
                     )
+                    
+                    # Simpan data result ke session state biar gak ilang
+                    st.session_state.bva_result_data = result
                     
                     try:
                         conn = st.connection("gsheets", type=GSheetsConnection)
@@ -445,199 +443,15 @@ else:
                     except Exception as e:
                         st.error(f"Gagal menyimpan ke database. Error: {e}")
 
-                # TAMPILAN HASIL DI TENGAH (FULL WIDTH)
-                st.subheader("🎯 Your Assessment Results")
-                
-                # Pakai kolom baru khusus untuk merapikan skor biar estetik
-                res_col1, res_col2 = st.columns(2)
-                with res_col1:
-                    st.metric(label="Overall Business Health Score", value=f"{result['score_percentage']}%")
-                with res_col2:
-                    st.markdown(f"### Classification:\n:{result['color']}[**{result['band']}**]")
-
-                # --- ROUTE B: PROGRESS BAR & AI GENERATION ---
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.markdown("### ⚙️ Generating Your Executive Report")
-                
-                # Container loading jadi full width
-                loading_container = st.container(border=True)
-                with loading_container:
-                    my_bar = st.progress(0, text="Preparing your custom BVA PDF Report... Please wait.")
-                    
-                    ai_result = {"data": None, "done": False, "error": None}
-                    
-                    # EKSTRAK DATA KE VARIABEL LOKAL
-                    current_company = st.session_state.user_data['company']
-                    current_assessment = st.session_state.user_data['assessment_type']
-                    current_extracted_data = st.session_state.extracted_data.copy()
-                    
-                    def fetch_ai_insights_bva():
-                        try:
-                            ai_result["data"] = generate_ai_report_insights(
-                                answers=current_extracted_data,
-                                score=f"{result['score_percentage']}%",
-                                company_name=current_company,
-                                assessment_type=current_assessment
-                            )
-                        except Exception as e:
-                            ai_result["error"] = e
-                        finally:
-                            ai_result["done"] = True
-
-                    # Mulai proses AI
-                    ai_thread = threading.Thread(target=fetch_ai_insights_bva)
-                    ai_thread.start()
-                    
-                    # Animasi progress bar
-                    progress_val = 10
-                    my_bar.progress(progress_val, text="Analyzing conversational logs...")
-                    
-                    while not ai_result["done"]:
-                        if progress_val < 85:
-                            progress_val += 1
-                            my_bar.progress(progress_val, text=f"AI Consultant is writing deep evaluation pages... ({progress_val}%)")
-                        time.sleep(0.3)
-                    
-                    # Selesaikan PDF
-                    if ai_result["error"]:
-                        my_bar.empty()
-                        st.error(f"Failed to generate AI insights. Error: {ai_result['error']}")
-                    else:
-                        my_bar.progress(90, text="Compiling A4 landscape layout...")
-                        try:
-                            from pdf_generator import create_healthcheck_pdf
-                            pdf_path = create_healthcheck_pdf(
-                                user_data=st.session_state.user_data,
-                                score_percentage=f"{result['score_percentage']}%",
-                                answers=current_extracted_data,
-                                ai_data=ai_result["data"]
-                            )
-                            
-                            my_bar.progress(100, text="Report generated successfully!")
-                            time.sleep(0.5)
-                            my_bar.empty()
-                            
-                            # Teks sukses yang rapi (Balon dihapus)
-                            st.success("✅ **Executive Report is ready for download!**")
-                            
-                            with open(pdf_path, "rb") as pdf_file:
-                                st.download_button(
-                                    label="📥 Download Your Full Report (PDF)",
-                                    data=pdf_file,
-                                    file_name=f"BlueRock_BVA_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
-                                    mime="application/pdf",
-                                    type="primary",
-                                    use_container_width=True,
-                                    key="bva_report_download_btn"  # <--- FIX UTAMA: ID Unik biar gak bentrok
-                                )
-                        except Exception as e:
-                            my_bar.empty()
-                            st.error(f"Failed to generate PDF. Error: {e}")
-
-                # TAMPILAN HASIL DI TENGAH (FULL WIDTH)
-                st.subheader("🎯 Your Assessment Results")
-                
-                # Pakai kolom baru khusus untuk merapikan skor biar estetik
-                res_col1, res_col2 = st.columns(2)
-                with res_col1:
-                    st.metric(label="Overall Business Health Score", value=f"{result['score_percentage']}%")
-                with res_col2:
-                    st.markdown(f"### Classification:\n:{result['color']}[**{result['band']}**]")
-
-                # --- ROUTE B: PROGRESS BAR & AI GENERATION ---
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.markdown("### ⚙️ Generating Your Executive Report")
-                
-                # Container loading jadi full width
-                loading_container = st.container(border=True)
-                with loading_container:
-                    my_bar = st.progress(0, text="Preparing your custom BVA PDF Report... Please wait.")
-                    
-                    ai_result = {"data": None, "done": False, "error": None}
-                    
-                    # EKSTRAK DATA KE VARIABEL LOKAL
-                    current_company = st.session_state.user_data['company']
-                    current_assessment = st.session_state.user_data['assessment_type']
-                    current_extracted_data = st.session_state.extracted_data.copy()
-                    
-                    def fetch_ai_insights_bva():
-                        try:
-                            ai_result["data"] = generate_ai_report_insights(
-                                answers=current_extracted_data,
-                                score=f"{result['score_percentage']}%",
-                                company_name=current_company,
-                                assessment_type=current_assessment
-                            )
-                        except Exception as e:
-                            ai_result["error"] = e
-                        finally:
-                            ai_result["done"] = True
-
-                    # Mulai proses AI
-                    ai_thread = threading.Thread(target=fetch_ai_insights_bva)
-                    ai_thread.start()
-                    
-                    # Animasi progress bar
-                    progress_val = 10
-                    my_bar.progress(progress_val, text="Analyzing conversational logs...")
-                    
-                    while not ai_result["done"]:
-                        if progress_val < 85:
-                            progress_val += 1
-                            my_bar.progress(progress_val, text=f"AI Consultant is writing deep evaluation pages... ({progress_val}%)")
-                        time.sleep(0.3)
-                    
-                    # Selesaikan PDF
-                    if ai_result["error"]:
-                        my_bar.empty()
-                        st.error(f"Failed to generate AI insights. Error: {ai_result['error']}")
-                    else:
-                        my_bar.progress(90, text="Compiling A4 landscape layout...")
-                        try:
-                            from pdf_generator import create_healthcheck_pdf
-                            pdf_path = create_healthcheck_pdf(
-                                user_data=st.session_state.user_data,
-                                score_percentage=f"{result['score_percentage']}%",
-                                answers=current_extracted_data,
-                                ai_data=ai_result["data"]
-                            )
-                            
-                            my_bar.progress(100, text="Report generated successfully! 🎉")
-                            time.sleep(0.5)
-                            my_bar.empty()
-                            
-                            st.success("✅ **Executive Report is ready for download!**")
-                            
-                            with open(pdf_path, "rb") as pdf_file:
-                                st.download_button(
-                                    label="📥 Download Your Full Report (PDF)",
-                                    data=pdf_file,
-                                    file_name=f"BlueRock_BVA_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
-                                    mime="application/pdf",
-                                    type="primary",
-                                    use_container_width=True
-                                )
-                        except Exception as e:
-                            my_bar.empty()
-                            st.error(f"Failed to generate PDF. Error: {e}")
-
-                        st.markdown("---")
-                        st.subheader("🎯 Your Assessment Results")
-                        st.metric(label="Overall Business Health Score", value=f"{result['score_percentage']}%")
-                        st.markdown(f"### Classification: :{result['color']}[**{result['band']}**]")
-
-                    # --- ROUTE B: PROGRESS BAR & AI GENERATION ---
-                    st.markdown("---")
+                # Tampilan proses (Hanya muncul saat loading)
+                progress_placeholder = st.empty()
+                with progress_placeholder.container():
                     st.markdown("### ⚙️ Generating Your Executive Report")
-                    
-                    # Membuat kotak UI (container) khusus agar progress bar tidak terkesan "nyempil"
                     loading_container = st.container(border=True)
                     with loading_container:
                         my_bar = st.progress(0, text="Preparing your custom BVA PDF Report... Please wait.")
                         
                         ai_result = {"data": None, "done": False, "error": None}
-                        
-                        # EKSTRAK DATA KE VARIABEL LOKAL DULU DI SINI
                         current_company = st.session_state.user_data['company']
                         current_assessment = st.session_state.user_data['assessment_type']
                         current_extracted_data = st.session_state.extracted_data.copy()
@@ -646,7 +460,7 @@ else:
                             try:
                                 ai_result["data"] = generate_ai_report_insights(
                                     answers=current_extracted_data,
-                                    score=f"{result['score_percentage']}%",    # <--- FIX ERROR 1: Ubah jadi String + '%'
+                                    score=f"{result['score_percentage']}%",
                                     company_name=current_company,
                                     assessment_type=current_assessment
                                 )
@@ -655,11 +469,9 @@ else:
                             finally:
                                 ai_result["done"] = True
 
-                        # Mulai proses AI di background thread
                         ai_thread = threading.Thread(target=fetch_ai_insights_bva)
                         ai_thread.start()
                         
-                        # Animasi progress bar
                         progress_val = 10
                         my_bar.progress(progress_val, text="Analyzing conversational logs...")
                         
@@ -669,7 +481,6 @@ else:
                                 my_bar.progress(progress_val, text=f"AI Consultant is writing deep evaluation pages... ({progress_val}%)")
                             time.sleep(0.3)
                         
-                        # Selesaikan PDF
                         if ai_result["error"]:
                             my_bar.empty()
                             st.error(f"Failed to generate AI insights. Error: {ai_result['error']}")
@@ -679,28 +490,42 @@ else:
                                 from pdf_generator import create_healthcheck_pdf
                                 pdf_path = create_healthcheck_pdf(
                                     user_data=st.session_state.user_data,
-                                    score_percentage=f"{result['score_percentage']}%",  # <--- FIX ERROR 2: Ubah jadi String + '%'
+                                    score_percentage=f"{result['score_percentage']}%",
                                     answers=current_extracted_data,
                                     ai_data=ai_result["data"]
                                 )
                                 
-                                my_bar.progress(100, text="Report generated successfully! 🎉")
+                                my_bar.progress(100, text="Done!")
                                 time.sleep(0.5)
-                                my_bar.empty()
-                                
-                                # UX Enhancement: Teks sukses & balon perayaan
-                                st.success("✅ **Executive Report is ready for download!**")
-                                st.balloons()
-                                
-                                with open(pdf_path, "rb") as pdf_file:
-                                    st.download_button(
-                                        label="📥 Download Your Full Report (PDF)",
-                                        data=pdf_file,
-                                        file_name=f"BlueRock_BVA_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
-                                        mime="application/pdf",
-                                        type="primary",
-                                        use_container_width=True  # Bikin tombol memanjang biar gampang di-klik
-                                    )
+                                # Simpan path PDF ke session state dan kosongkan area loading
+                                st.session_state.bva_pdf_path = pdf_path
                             except Exception as e:
-                                my_bar.empty()
                                 st.error(f"Failed to generate PDF. Error: {e}")
+                
+                progress_placeholder.empty() # Hilangkan loading bar setelah selesai
+                st.rerun() # Refresh agar masuk ke blok tampilan hasil di bawah
+
+        # --- TAMPILAN HASIL AKHIR (DI LUAR BUTTON CLICK) ---
+        if st.session_state.bva_result_data and st.session_state.bva_pdf_path:
+            st.markdown("---")
+            st.subheader("🎯 Your Assessment Results")
+            
+            res_col1, res_col2 = st.columns(2)
+            res_data = st.session_state.bva_result_data
+            with res_col1:
+                st.metric(label="Overall Business Health Score", value=f"{res_data['score_percentage']}%")
+            with res_col2:
+                st.markdown(f"### Classification:\n:{res_data['color']}[**{res_data['band']}**]")
+
+            st.success("✅ **Executive Report is ready for download!**")
+            
+            with open(st.session_state.bva_pdf_path, "rb") as pdf_file:
+                st.download_button(
+                    label="📥 Download Your Full Report (PDF)",
+                    data=pdf_file,
+                    file_name=f"BlueRock_BVA_Report_{st.session_state.user_data['company'].replace(' ', '_')}.pdf",
+                    mime="application/pdf",
+                    type="primary",
+                    use_container_width=True,
+                    key="btn_dl_bva_final" # KUNCI PENTING
+                )
